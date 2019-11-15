@@ -1,14 +1,15 @@
 export default class Piece {
 
-  constructor(longueur, largeur, epaisseur) {
+  constructor(longueur, largeur, epaisseur, arrasement) {
     this.longueur  = longueur
     this.largeur   = largeur
     this.epaisseur = epaisseur
+    this.arrasement = arrasement
 
     this.epaisseur_plateau =
-      (epaisseur < 18 - 2) ? 18 :
-      (epaisseur < 24 - 2) ? 24 :
-      (epaisseur < 32 - 2) ? 32 :
+      (epaisseur <= 20 - 3) ? 20 :
+      (epaisseur <= 27 - 3) ? 27 :
+      (epaisseur <= 35 - 3) ? 35 :
       epaisseur + 10;
   }
 

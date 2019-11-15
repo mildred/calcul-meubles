@@ -3,7 +3,7 @@
   export let path = '0';
 </script>
 
-<a href="#component-{path}">{data.name}</a>
+<a href="#component-{path}">{data.type} {data.name}</a>
 {#if data.children}
 <ul>
   {#each data.children as child}

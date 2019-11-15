@@ -59,7 +59,7 @@
   <ul>
   {#each data.children as child, i}
     <li>
-      <a href="#component-{path}-{child.id}">{child.name}</a>
+      <a href="#component-{path}-{child.id}">{child.type} {child.name}</a>
       <a href="@" on:click|preventDefault={e => renameChild(i)}>✎</a>
       <a href="@" on:click|preventDefault={e => deleteChild(i)}>🗑</a>
     </li>
