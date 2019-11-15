@@ -1,7 +1,9 @@
 <script>
+  import Component from '../Component.svelte';
   import Piece from '../pieces/piece.js';
   import ListeDebit from '../ListeDebit.svelte'
 
+  export let path
   export let data = {}
   data = {
     opt: {
@@ -105,29 +107,31 @@
   }
 </style>
 
-<div class="main">
+<Component data={data} path={path}>
+  <div class="main">
 
-  <h1>Calcul d'un caisson</h1>
-  <h2>{data.name}</h2>
+    <h1>Calcul d'un caisson</h1>
+    <h2>{data.name}</h2>
 
-  <form>
-  <label><span>Hauteur    : </span><input type=number bind:value={data.opt.hauteur} min=0/> mm </label>
-  <label><span>Largeur    : </span><input type=number bind:value={data.opt.largeur} min=0/> mm</label>
-  <label><span>Profondeur : </span><input type=number bind:value={data.opt.profondeur} min=0/> mm </label>
+    <form>
+    <label><span>Hauteur    : </span><input type=number bind:value={data.opt.hauteur} min=0/> mm </label>
+    <label><span>Largeur    : </span><input type=number bind:value={data.opt.largeur} min=0/> mm</label>
+    <label><span>Profondeur : </span><input type=number bind:value={data.opt.profondeur} min=0/> mm </label>
 
-  <hr/>
+    <hr/>
 
-  <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={data.opt.epaisseur_montants} min=0/> mm </label>
-  <label><span>Épaisseur panneau : </span><input type=number bind:value={data.opt.epaisseur_panneau} min=0/> mm </label>
-  <label><span>Largeur montants : </span><input type=number bind:value={data.opt.largeur_montants} min=0/> mm</label>
-  <label><span>Largeur traverses cotés : </span><input type=number bind:value={data.opt.hauteur_traverses} min=0/> mm</label>
-  <label><span>Largeur traverses : </span><input type=number bind:value={data.opt.profondeur_traverses} min=0/> mm</label>
-  <label><span>Profondeur tenons : </span><input type=number bind:value={data.opt.profondeur_tenons} min=0/> mm</label>
-  <label><span>Profondeur tenons intermédiaire : </span><input type=number bind:value={data.opt.profondeur_tenons_intermediaire} min=0/> mm</label>
-  <label><span>Profondeur rainure : </span><input type=number bind:value={data.opt.profondeur_rainure} min=0/> mm</label>
-  <label><span>Jeu panneau / rainure : </span><input type=number bind:value={data.opt.jeu_rainure} min=0/> mm</label>
-  </form>
+    <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={data.opt.epaisseur_montants} min=0/> mm </label>
+    <label><span>Épaisseur panneau : </span><input type=number bind:value={data.opt.epaisseur_panneau} min=0/> mm </label>
+    <label><span>Largeur montants : </span><input type=number bind:value={data.opt.largeur_montants} min=0/> mm</label>
+    <label><span>Largeur traverses cotés : </span><input type=number bind:value={data.opt.hauteur_traverses} min=0/> mm</label>
+    <label><span>Largeur traverses : </span><input type=number bind:value={data.opt.profondeur_traverses} min=0/> mm</label>
+    <label><span>Profondeur tenons : </span><input type=number bind:value={data.opt.profondeur_tenons} min=0/> mm</label>
+    <label><span>Profondeur tenons intermédiaire : </span><input type=number bind:value={data.opt.profondeur_tenons_intermediaire} min=0/> mm</label>
+    <label><span>Profondeur rainure : </span><input type=number bind:value={data.opt.profondeur_rainure} min=0/> mm</label>
+    <label><span>Jeu panneau / rainure : </span><input type=number bind:value={data.opt.jeu_rainure} min=0/> mm</label>
+    </form>
 
-  <hr class="clear"/>
-  <ListeDebit pieces={pieces} />
-</div>
+    <hr class="clear"/>
+    <ListeDebit pieces={pieces} />
+  </div>
+</Component>

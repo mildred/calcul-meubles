@@ -1,6 +1,12 @@
 <script>
-  import Folder from './Folder.svelte';
+  import { setContext } from 'svelte';
   import TreeItem from './TreeItem.svelte';
+  import Ensemble from './ensembles/Ensemble.svelte';
+  import Porte from './ensembles/Porte.svelte';
+  import Caisson from './ensembles/Caisson.svelte';
+  let components = { Porte, Caisson, Ensemble }
+
+  setContext('App-components', components)
 
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
   let data
@@ -105,7 +111,7 @@
   </div>
 
   <div class="main">
-    <Folder name="Meuble" bind:data={data} />
+    <Ensemble name="Meuble" bind:data={data} />
     <pre id="json">{JSON.stringify(data, null, 2)}</pre>
   </div>
 </div>
