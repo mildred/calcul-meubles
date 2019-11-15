@@ -1,6 +1,7 @@
 <script>
   import Porte from './ensembles/Porte.svelte';
-  let components = { Porte }
+  import Caisson from './ensembles/Caisson.svelte';
+  let components = { Porte, Caisson }
 
   export let name = null
   export let path = '0'
@@ -52,6 +53,7 @@
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
 
   <button on:click={e => add('Porte')}>Nouvelle porte</button>
+  <button on:click={e => add('Caisson')}>Nouveau caisson</button>
   <button on:click={e => add('Folder')}>Nouveau sous-ensemble</button>
 
   <ul>
