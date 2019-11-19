@@ -3,14 +3,14 @@
 
   export let name = null
   export let path = '0'
-  export let data = {}
+  export let initdata = {}
 
-  data = {
+  let data = {
     children: [],
     type: 'Ensemble',
     id: 0,
     name: name,
-    ...data
+    ...initdata
   }
 
   function add(type){
@@ -29,7 +29,7 @@
 
 </script>
 
-<Component bind:data={data} path={path}>
+<Component bind:data={data} path={path} on:datachange>
   <h1>Sous-ensemble</h1>
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
 

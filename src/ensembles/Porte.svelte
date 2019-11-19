@@ -6,9 +6,11 @@
   import ListeDebit from '../ListeDebit.svelte'
 
   export let path
-  export let data = {}
+  export let initdata = {}
 
-  let opt = {
+  let data = {...initdata}
+
+  export let opt = {
     type:  'contre-profil',
     largeur: 400,
     hauteur: 600,
@@ -24,6 +26,7 @@
   }
 
   $: data.opt = opt
+  $: opt = {...opt, ...initdata.forceopt}
 
   let zoom = 0.5
 
@@ -86,7 +89,7 @@
   }
 </style>
 
-<Component bind:data={data} path={path}>
+<Component bind:data={data} path={path} on:datachange>
   <div class="main">
 
     <h1>Calcul d'une porte</h1>

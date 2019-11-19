@@ -4,7 +4,9 @@
   import ListeDebit from '../ListeDebit.svelte'
 
   export let path
-  export let data = {}
+  export let initdata = {}
+
+  let data = {...initdata}
 
   let opt = {
     type:  'contre-profil',
@@ -20,6 +22,11 @@
     profondeur_rainure: 10,
     jeu_rainure: 1,
     epaisseur_panneau: 16,
+    portes: [
+      {
+        type: 'aucune'
+      }
+    ],
     ...data.opt
   }
 
@@ -35,36 +42,36 @@
   let zoom = 0.5;
 
   $: montants = new Piece(
-    data.opt.hauteur,
-    data.opt.largeur_montants,
-    data.opt.epaisseur_montants)
+    opt.hauteur,
+    opt.largeur_montants,
+    opt.epaisseur_montants)
 
   $: traverses_cote = new Piece(
-    data.opt.profondeur - 2 * (data.opt.largeur_montants - data.opt.profondeur_tenons_cotes),
-    data.opt.hauteur_traverses,
-    data.opt.epaisseur_montants,
-    data.opt.profondeur - 2 * (data.opt.largeur_montants))
+    opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
+    opt.hauteur_traverses,
+    opt.epaisseur_montants,
+    opt.profondeur - 2 * (opt.largeur_montants))
 
   $: panneaux_cote = new Piece(
-    data.opt.hauteur - 2 * (data.opt.largeur_montants - data.opt.profondeur_rainure + data.opt.jeu_rainure),
-    data.opt.profondeur - 2 * (data.opt.hauteur_traverses - data.opt.profondeur_rainure + data.opt.jeu_rainure),
-    data.opt.epaisseur_panneau)
+    opt.hauteur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+    opt.profondeur - 2 * (opt.hauteur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+    opt.epaisseur_panneau)
 
   $: traverses = new Piece(
-    data.opt.largeur - 2 * (data.opt.epaisseur_montants - data.opt.profondeur_tenons),
-    data.opt.profondeur_traverses,
-    data.opt.epaisseur_montants,
-    data.opt.largeur - 2 * data.opt.epaisseur_montants)
+    opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
+    opt.profondeur_traverses,
+    opt.epaisseur_montants,
+    opt.largeur - 2 * opt.epaisseur_montants)
 
   $: panneaux_haut_bas = new Piece(
-    data.opt.largeur - 2 * (data.opt.epaisseur_montants - data.opt.profondeur_rainure + data.opt.jeu_rainure),
-    data.opt.profondeur - 2 * (data.opt.profondeur_traverses - data.opt.profondeur_rainure + data.opt.jeu_rainure),
-    data.opt.epaisseur_panneau)
+    opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+    opt.profondeur - 2 * (opt.profondeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+    opt.epaisseur_panneau)
 
   $: panneau_dos = new Piece(
-    data.opt.hauteur - 2 * (data.opt.epaisseur_montants - data.opt.profondeur_rainure + data.opt.jeu_rainure),
-    data.opt.largeur - 2 * (data.opt.epaisseur_montants - data.opt.profondeur_rainure + data.opt.jeu_rainure),
-    data.opt.epaisseur_panneau)
+    opt.hauteur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+    opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+    opt.epaisseur_panneau)
 
   $: pieces = [
       {
@@ -99,6 +106,36 @@
       }
     ]
 
+    $: calculPortes(opt.portes, opt)
+
+    function calculPortes(portes, opt){
+      console.log(`Caisson(${path}) Recalcul des portes %o %o %o`, portes, opt)
+      if(!data.children) data.children = []
+      for(let i = 0; i<portes.length; i++) {
+        let type = portes[i].type
+        if(type == 'aucune'){
+          data.children[i] = {}
+        } else {
+          data.children[i] = {
+            type: 'Porte',
+            name: `${i+1}`,
+            id:   i,
+            ...data.children[i],
+            forceopt: {
+              largeur:
+                (type == 'total') ? opt.largeur :
+                (type == 'demi')  ? opt.largeur - opt.epaisseur_montants :
+                0,
+              hauteur:
+                (type == 'total') ? opt.hauteur :
+                (type == 'demi')  ? opt.hauteur - opt.epaisseur_montants :
+                0,
+            },
+          }
+        }
+      }
+    }
+
     function addPorteRecouvrementTotal(){
       let name = "Porte recouvrement total"
       if(!data.children) data.children = []
@@ -108,8 +145,8 @@
         name: name,
         id:   id,
         opt: {
-          largeur: data.opt.largeur,
-          hauteur: data.opt.hauteur,
+          largeur: opt.largeur,
+          hauteur: opt.hauteur,
         }
       }]
     }
@@ -137,7 +174,7 @@
   }
 </style>
 
-<Component bind:data={data} path={path}>
+<Component bind:data={data} path={path} on:datachange>
   <div class="main">
 
     <h1>Calcul d'un caisson</h1>
@@ -146,8 +183,8 @@
     <div style="float: left">
     <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
     <svg
-        width="{5 + zoom*data.opt.largeur + 5 + zoom*data.opt.profondeur + 5}"
-        height="{5 + zoom*data.opt.hauteur + 5 + zoom*data.opt.profondeur + 5}">
+        width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
+        height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
       <g transform="translate(5, 5) scale({zoom} {zoom})">
         <rect class="outline"
           x="0"
@@ -155,65 +192,65 @@
           width="{montants.epaisseur}"
           height="{montants.longueur}" />
         <rect class="outline"
-          x="{data.opt.largeur - montants.epaisseur}"
+          x="{opt.largeur - montants.epaisseur}"
           y="0"
           width="{montants.epaisseur}"
           height="{montants.longueur}" />
         <rect class="outline"
-          x="{montants.epaisseur - data.opt.profondeur_tenons}"
+          x="{montants.epaisseur - opt.profondeur_tenons}"
           y="0"
           width="{traverses.longueur}"
           height="{traverses.epaisseur}" />
         <rect class="outline"
-          x="{montants.epaisseur - data.opt.profondeur_tenons}"
-          y="{data.opt.hauteur - traverses.epaisseur}"
+          x="{montants.epaisseur - opt.profondeur_tenons}"
+          y="{opt.hauteur - traverses.epaisseur}"
           width="{traverses.longueur}"
           height="{traverses.epaisseur}" />
       </g>
-      <g transform="translate({5 + zoom*data.opt.largeur + 10}, 5) scale({zoom} {zoom})">
+      <g transform="translate({5 + zoom*opt.largeur + 10}, 5) scale({zoom} {zoom})">
         <rect class="outline"
           x="0"
           y="0"
           width="{montants.largeur}"
           height="{montants.longueur}" />
         <rect class="outline"
-          x="{data.opt.profondeur - montants.largeur}"
+          x="{opt.profondeur - montants.largeur}"
           y="0"
           width="{montants.largeur}"
           height="{montants.longueur}" />
         <rect class="outline"
-          x="{montants.largeur - data.opt.profondeur_tenons_cotes}"
+          x="{montants.largeur - opt.profondeur_tenons_cotes}"
           y="0"
           width="{traverses_cote.longueur}"
           height="{traverses_cote.largeur}" />
         <rect class="outline"
-          x="{montants.largeur - data.opt.profondeur_tenons_cotes}"
-          y="{data.opt.hauteur - traverses_cote.largeur}"
+          x="{montants.largeur - opt.profondeur_tenons_cotes}"
+          y="{opt.hauteur - traverses_cote.largeur}"
           width="{traverses_cote.longueur}"
           height="{traverses_cote.largeur}" />
       </g>
-      <g transform="translate(5, {5 + zoom*data.opt.hauteur + 5}) scale({zoom} {zoom})">
+      <g transform="translate(5, {5 + zoom*opt.hauteur + 5}) scale({zoom} {zoom})">
         <!-- traverses -->
         <rect class="outline"
-          x="{montants.epaisseur - data.opt.profondeur_tenons}"
+          x="{montants.epaisseur - opt.profondeur_tenons}"
           y="0"
           width="{traverses.longueur}"
           height="{traverses.epaisseur}" />
         <rect class="outline"
-          x="{montants.epaisseur - data.opt.profondeur_tenons}"
-          y="{data.opt.profondeur - traverses.epaisseur}"
+          x="{montants.epaisseur - opt.profondeur_tenons}"
+          y="{opt.profondeur - traverses.epaisseur}"
           width="{traverses.longueur}"
           height="{traverses.epaisseur}" />
 
         <!-- traverses cotés -->
         <rect class="outline"
           x="0"
-          y="{montants.largeur - data.opt.profondeur_tenons_cotes}"
+          y="{montants.largeur - opt.profondeur_tenons_cotes}"
           width="{traverses_cote.epaisseur}"
           height="{traverses_cote.longueur}" />
         <rect class="outline"
-          x="{data.opt.largeur - traverses_cote.epaisseur}"
-          y="{montants.largeur - data.opt.profondeur_tenons_cotes}"
+          x="{opt.largeur - traverses_cote.epaisseur}"
+          y="{montants.largeur - opt.profondeur_tenons_cotes}"
           width="{traverses_cote.epaisseur}"
           height="{traverses_cote.longueur}" />
 
@@ -223,39 +260,46 @@
           y="0"
           width="{montants.epaisseur}" height="{montants.largeur}" />
         <rect class="outline"
-          x="{data.opt.largeur - montants.epaisseur}"
+          x="{opt.largeur - montants.epaisseur}"
           y="0"
           width="{montants.epaisseur}" height="{montants.largeur}" />
         <rect class="outline"
-          x="{data.opt.largeur - montants.epaisseur}"
-          y="{data.opt.profondeur - montants.largeur}"
+          x="{opt.largeur - montants.epaisseur}"
+          y="{opt.profondeur - montants.largeur}"
           width="{montants.epaisseur}" height="{montants.largeur}" />
         <rect class="outline"
           x="0"
-          y="{data.opt.profondeur - montants.largeur}"
+          y="{opt.profondeur - montants.largeur}"
           width="{montants.epaisseur}" height="{montants.largeur}" />
       </g>
     </svg>
     </div>
 
     <form style="float: left">
-    <label><span>Hauteur    : </span><input type=number bind:value={data.opt.hauteur} min=0/> mm </label>
-    <label><span>Largeur    : </span><input type=number bind:value={data.opt.largeur} min=0/> mm</label>
-    <label><span>Profondeur : </span><input type=number bind:value={data.opt.profondeur} min=0/> mm </label>
+    <label><span>Hauteur    : </span><input type=number bind:value={opt.hauteur} min=0/> mm </label>
+    <label><span>Largeur    : </span><input type=number bind:value={opt.largeur} min=0/> mm</label>
+    <label><span>Profondeur : </span><input type=number bind:value={opt.profondeur} min=0/> mm </label>
 
     <hr/>
 
-    <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={data.opt.epaisseur_montants} min=0/> mm </label>
-    <label><span>Épaisseur panneau : </span><input type=number bind:value={data.opt.epaisseur_panneau} min=0/> mm </label>
-    <label><span>Largeur montants : </span><input type=number bind:value={data.opt.largeur_montants} min=0/> mm</label>
-    <label><span>Largeur traverses cotés : </span><input type=number bind:value={data.opt.hauteur_traverses} min=0/> mm</label>
-    <label><span>Largeur traverses : </span><input type=number bind:value={data.opt.profondeur_traverses} min=0/> mm</label>
-    <label><span>Profondeur tenons cotés : </span><input type=number bind:value={data.opt.profondeur_tenons_cotes} min=0/> mm</label>
-    <label><span>Profondeur tenons : </span><input type=number bind:value={data.opt.profondeur_tenons} min=0/> mm</label>
-    <label><span>Profondeur rainure : </span><input type=number bind:value={data.opt.profondeur_rainure} min=0/> mm</label>
-    <label><span>Jeu panneau / rainure : </span><input type=number bind:value={data.opt.jeu_rainure} min=0/> mm</label>
+    <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={opt.epaisseur_montants} min=0/> mm </label>
+    <label><span>Épaisseur panneau : </span><input type=number bind:value={opt.epaisseur_panneau} min=0/> mm </label>
+    <label><span>Largeur montants : </span><input type=number bind:value={opt.largeur_montants} min=0/> mm</label>
+    <label><span>Largeur traverses cotés : </span><input type=number bind:value={opt.hauteur_traverses} min=0/> mm</label>
+    <label><span>Largeur traverses : </span><input type=number bind:value={opt.profondeur_traverses} min=0/> mm</label>
+    <label><span>Profondeur tenons cotés : </span><input type=number bind:value={opt.profondeur_tenons_cotes} min=0/> mm</label>
+    <label><span>Profondeur tenons : </span><input type=number bind:value={opt.profondeur_tenons} min=0/> mm</label>
+    <label><span>Profondeur rainure : </span><input type=number bind:value={opt.profondeur_rainure} min=0/> mm</label>
+    <label><span>Jeu panneau / rainure : </span><input type=number bind:value={opt.jeu_rainure} min=0/> mm</label>
 
-    <button on:click={e => addPorteRecouvrementTotal()}>Nouvelle porte recouvrement total</button>
+    <label>
+      <span>Type de porte : </span>
+      <select bind:value={opt.portes[0].type}>
+        <option value="aucune">Aucune</option>
+        <option value="total">Recouvrement total</option>
+        <option value="demi">Recouvrement à moitié</option>
+      </select>
+    </label>
     </form>
 
     <hr class="clear"/>
