@@ -50,6 +50,7 @@ export default {
 		production && terser()
 	],
 	watch: {
-		clearScreen: false
+		clearScreen: false,
+		chokidar: false, // https://github.com/rollup/rollup/issues/1666#issuecomment-372383550
 	}
 };
