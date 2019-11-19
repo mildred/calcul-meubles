@@ -14,17 +14,17 @@
   }
 
   function add(type){
-    let name = prompt("Nom du sous-ensemble :")
     let id = data.children.length
+    let name = prompt("Nom du sous-ensemble :", `${path}-${id}`) || `${path}-${id}`
     data.children = [...data.children, {
       type: type,
-      name: name || `${path}-${id}`,
+      name: name,
       id:   id
     }]
   }
 
   function rename(){
-    data.name = prompt(`Renommer "${data.name}" en :`)
+    data.name = prompt(`Renommer "${data.name}" en :`, data.name) || data.name
   }
 
 </script>

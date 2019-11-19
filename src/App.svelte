@@ -28,7 +28,16 @@
     window.location.reload()
   }
 
+  function rename(){
+    let new_filename = prompt("Nom du fichier", filename)
+    if (new_filename == null) return false
+    filename = new_filename
+    return true
+  }
+
   function save(){
+    if(!rename()) return;
+
     let json = JSON.stringify(data, null, 2)
     let file = new window.File([json], filename, {
       type: 'application/json'
@@ -104,6 +113,7 @@
     <button on:click={save}>Enregistrer sous...</button>
     <button on:click={open}>Ouvrir...</button>
     <a href="#json">{filename}</a>
+    <a href="@" on:click|preventDefault={rename}>✎</a>
   </div>
 
   <div class="tree">

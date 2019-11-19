@@ -9,7 +9,7 @@
   setContext('Component-path', path)
 
   function renameChild(i){
-    let name = prompt(`Renommer "${data.children[i].name}" en :`)
+    let name = prompt(`Renommer "${data.children[i].name}" en :`, data.children[i].name) || data.children[i].name
     data.children[i].name = name
   }
 
