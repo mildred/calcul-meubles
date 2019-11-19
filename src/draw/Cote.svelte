@@ -3,6 +3,8 @@
   export let zoom = 1
   export let suffix = ''
   export let pos = 'top'
+  export let x = 0
+  export let y = 0
 
   $: rotate =
     (pos == 'left') ? 'rotate(-90)' :
@@ -21,7 +23,7 @@
     }))
 </script>
 
-<g transform="{rotate}">
+<g transform="translate({x}, {y}) {rotate}">
 {#each dim2 as d}
 <circle
   cx="{d.zstart}"              cy="{20*d.row + 15}"

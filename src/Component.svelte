@@ -44,7 +44,7 @@
 </div>
 
 {#if data.children && data.children.length}
-{#each data.children as child}
-  <svelte:component this={components[child.type]} bind:data={child} path="{path}-{child.id}" />
+{#each data.children as child, i}
+  <svelte:component this={components[child.type]} bind:data={data.children[i]} path="{path}-{child.id}" />
 {/each}
 {/if}

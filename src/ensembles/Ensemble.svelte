@@ -29,7 +29,7 @@
 
 </script>
 
-<Component data={data} path={path}>
+<Component bind:data={data} path={path}>
   <h1>Sous-ensemble</h1>
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
 

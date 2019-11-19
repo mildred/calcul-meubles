@@ -68,8 +68,6 @@
       let file = e.target.files[0];
       if (!file) return
 
-      console.log("file: %o", file)
-
       let reader = new FileReader();
       reader.onload = (e) => {
         data     = JSON.parse(e.target.result)
