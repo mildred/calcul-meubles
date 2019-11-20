@@ -3,6 +3,7 @@
   import Component from '../Component.svelte';
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
+  import SVGPiece from '../pieces/SVGPiece.svelte';
   import ListeDebit from '../ListeDebit.svelte'
 
   export let path
@@ -31,11 +32,25 @@
   let zoom = 0.5
 
   $: montant = new Piece(opt.hauteur, opt.largeur_montants, opt.epaisseur)
+  $: montant_g = montant.put(0,                                  0, 0, 'yxz')
+  $: montant_d = montant.put(opt.largeur - opt.largeur_montants, 0, 0, 'yxz')
   $: traverse =
-    (opt.type == 'contre-profil')  ? new Piece(opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil), opt.largeur_traverses, opt.epaisseur):
-    (opt.type == 'tenon-mortaise') ? new Piece(opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_tenons), opt.largeur_traverses, opt.epaisseur):
+    (opt.type == 'contre-profil')  ? new Piece(
+      opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil),
+      opt.largeur_traverses,
+      opt.epaisseur):
+    (opt.type == 'tenon-mortaise') ? new Piece(
+      opt.largeur - 2 * opt.largeur_montants,
+      opt.largeur_traverses,
+      opt.epaisseur).ajout_tenons(opt.profondeur_tenons):
     null;
-  $: panneau =
+  $: traverse_xpos =
+    (opt.type == 'contre-profil')  ? opt.largeur_montants - opt.profondeur_profil:
+    (opt.type == 'tenon-mortaise') ? opt.largeur_montants - opt.profondeur_tenons:
+    0;
+  $: traverse_h = traverse.put(traverse_xpos, 0,                            0, 'xyz')
+  $: traverse_b = traverse.put(traverse_xpos, opt.hauteur-traverse.largeur, 0, 'xyz')
+  $: panneau = (
     (opt.type == 'contre-profil')  ? new Piece(
       opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
       opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
@@ -44,12 +59,12 @@
       opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
       opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
       opt.epaisseur_panneau):
-    null;
-
-  $: traverse_xpos =
-    (opt.type == 'contre-profil')  ? opt.largeur_montants - opt.profondeur_profil:
-    (opt.type == 'tenon-mortaise') ? opt.largeur_montants - opt.profondeur_tenons:
-    0;
+    null
+  ).put(
+    montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+    traverse.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+    0,
+    'xyz')
 
   $: pieces = [
       {
@@ -110,18 +125,18 @@
           },
           {
             text: "lon. traverse: ",
-            start: traverse_xpos,
-            length: traverse.longueur,
+            start: traverse_h.x,
+            length: traverse_h.longueur,
             row: 1,
           },
           {
-            start: 0,
-            length: montant.largeur,
+            start: montant_g.x,
+            length: montant_g.largeur,
             row: 0,
           },
           {
-            start: opt.largeur-montant.largeur,
-            length: montant.largeur,
+            start: montant_d.x,
+            length: montant_d.largeur,
             row: 0,
           }
         ]} />
@@ -134,36 +149,11 @@
           }
         ]} />
       <g transform="translate(20, 60) scale({zoom} {zoom})">
-        <rect
-          x="{(montant.largeur - opt.profondeur_rainure + opt.jeu_rainure)}"
-          y="{(traverse.largeur - opt.profondeur_rainure + opt.jeu_rainure)}"
-          width="{panneau.longueur}"
-          height="{panneau.largeur}"
-          style="fill:rgb(255,255,255);fill-opacity:0.5;stroke-width:1;stroke:rgb(0,0,0)"/>
-        <rect
-          x="{traverse_xpos}"
-          y="0"
-          width="{traverse.longueur}"
-          height="{traverse.largeur}"
-          style="fill:rgb(255,255,255);fill-opacity:0.5;stroke-width:1;stroke:rgb(0,0,0)"/>
-        <rect
-          x="{traverse_xpos}"
-          y="{(opt.hauteur-montant.largeur)}"
-          width="{traverse.longueur}"
-          height="{traverse.largeur}"
-          style="fill:rgb(255,255,255);fill-opacity:0.5;stroke-width:1;stroke:rgb(0,0,0)"/>
-        <rect
-          x="0"
-          y="0"
-          width="{montant.largeur}"
-          height="{montant.longueur}"
-          style="fill:rgb(255,255,255);fill-opacity:0.5;stroke-width:1;stroke:rgb(0,0,0)"/>
-        <rect
-          x="{(opt.largeur-montant.largeur)}"
-          y="0"
-          width="{montant.largeur}"
-          height="{montant.longueur}"
-          style="fill:rgb(255,255,255);fill-opacity:0.5;stroke-width:1;stroke:rgb(0,0,0)"/>
+        <SVGPiece piece={panneau} pos="avant" />
+        <SVGPiece piece={traverse_h} pos="avant" />
+        <SVGPiece piece={traverse_b} pos="avant" />
+        <SVGPiece piece={montant_g} pos="avant" />
+        <SVGPiece piece={montant_d} pos="avant" />
       </g>
     </svg>
     </div>
