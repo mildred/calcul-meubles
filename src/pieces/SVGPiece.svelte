@@ -17,4 +17,4 @@
 </style>
 
 <!--<rect class="outline" x={x} y={y} width={dx} height={dy} />-->
-<polyline class="outline" points={polyline} fill=none stroke=black />
+<polyline class="outline" points={polyline} fill=none stroke=black data-name={piece.name} />

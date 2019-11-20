@@ -1,12 +1,29 @@
 <script>
 
   export let pieces = []
+  export let merge = true
+
+  $: pieces2 = pieces
+    .map((p) => (
+      (!p.piece) ? p : p.piece.update_new({
+        ...p.piece,
+        names: p.nom ? p.nom.split(' ') : p.piece.names,
+        que: p.que || p.piece.que || 1,
+      })
+    ))
+
+  $: pieces3 = !merge ? pieces2 :
+    Object.values(pieces2.reduce((map, p) => (map[p.signature()] = [...(map[p.signature()] || []), p], map), {}))
+    .map(family => (
+      family.reduce((a, b) => (a == null ? b : a.merge(b)), null)
+    ))
+
 
   let cubeprice = 0
   let cubemargin = 100
 
-  $: total_cube = pieces.map(p => p.que * p.piece.cubage(cubemargin/100)).reduce((a, b) => (a+b))
-  $: total_prix = pieces.map(p => p.que * p.piece.prix(cubeprice, cubemargin/100)).reduce((a, b) => (a+b))
+  $: total_cube = pieces3.map(p => p.que * p.cubage(cubemargin/100)).reduce((a, b) => (a+b))
+  $: total_prix = pieces3.map(p => p.que * p.prix(cubeprice, cubemargin/100)).reduce((a, b) => (a+b))
 
 </script>
 
@@ -24,7 +41,7 @@
   tr:nth-child(even) {
     background-color: #f2f2f2;
   }
-  td {
+  td:not(:first-child) {
     white-space: nowrap;
   }
   input[size='5'] {
@@ -47,16 +64,16 @@
     <th>Cubage<br/>(x<input type=number bind:value={cubemargin} size=3 min=100 step=5/>%)</th>
     <th>Prix au m³<br/><input type=number bind:value={cubeprice} size=5 step=10/></th>
   </tr>
-  {#each pieces as piece}
+  {#each pieces3 as piece}
   <tr>
-    <td>{piece.nom}</td>
+    <td>{piece.name}</td>
     <td>{piece.que || 1}</td>
-    <td>{piece.piece.string_dimentions()}</td>
-    <td>{piece.piece.string_arrasement()}</td>
-    <td>{piece.piece.largeur * piece.piece.longueur / 1e6}</td>
-    <td>{piece.piece.epaisseur_plateau}</td>
-    <td>{piece.que * piece.piece.cubage(cubemargin/100).toPrecision(9)}</td>
-    <td>{piece.que * piece.piece.prix(cubeprice, cubemargin/100).toPrecision(2)}</td>
+    <td>{piece.string_dimentions()}</td>
+    <td>{piece.string_arrasement()}</td>
+    <td>{piece.largeur * piece.longueur / 1e6}</td>
+    <td>{piece.epaisseur_plateau}</td>
+    <td>{piece.que * piece.cubage(cubemargin/100).toPrecision(9)}</td>
+    <td>{piece.que * piece.prix(cubeprice, cubemargin/100).toPrecision(2)}</td>
   </tr>
   {/each}
   <tr>

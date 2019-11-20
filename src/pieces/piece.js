@@ -1,10 +1,10 @@
 
 function get_position(pos){
   switch(pos){
-    case 'left':   case 'l': case 'gauche':  case 'ga': case 'yz': case 'x': return 'yz';
-    case 'right':  case 'r': case 'droite':  case 'dr': case 'yZ': case 'X': return 'yZ';
-    case 'top':    case 't': case 'haut':    case 'h':  case 'xZ': case 'y': return 'yZ';
-    case 'bottom': case 'b': case 'bas':                case 'xz': case 'Y': return 'yz';
+    case 'left':   case 'l': case 'gauche':  case 'ga': case 'zy': case 'x': return 'zy';
+    case 'right':  case 'r': case 'droite':  case 'dr': case 'Zy': case 'X': return 'Zy';
+    case 'top':    case 't': case 'haut':    case 'h':  case 'xZ': case 'y': return 'xZ';
+    case 'bottom': case 'b': case 'bas':                case 'xz': case 'Y': return 'xz';
     case 'front':  case 'F': case 'avant':   case 'av': case 'xy': case 'z': return 'xy';
     case 'back':   case 'B': case 'arrière': case 'ar': case 'Xy': case 'Z': return 'Xy';
     default: throw `Unknown position ${pos}`
@@ -24,26 +24,61 @@ function get_orient(orient){
 
 export default class Piece {
 
-  constructor(longueur, largeur, epaisseur, arrasement) {
-    this.longueur  = longueur
-    this.largeur   = largeur
-    this.epaisseur = epaisseur
-    this.arrasement = arrasement || longueur
-    this.x = 0
-    this.y = 0
-    this.z = 0
-    this.orient = 'xyz'
+  constructor() {
+    this.longueur   = 0
+    this.largeur    = 0
+    this.epaisseur  = 0
+    this.arrasement = 0
+    this.x          = 0
+    this.y          = 0
+    this.z          = 0
+    this.orient     = 'xyz'
+    this.names      = []
+    this.que        = 1
+  }
 
-    this.epaisseur_plateau =
-      (epaisseur <= 20 - 3) ? 20 :
-      (epaisseur <= 27 - 3) ? 27 :
-      (epaisseur <= 35 - 3) ? 35 :
-      epaisseur + 10;
+  update_new(props) {
+    return Object.assign(Object.create(Piece.prototype), props)
+  }
+
+  get epaisseur_plateau() {
+    return (this.epaisseur <= 20 - 3) ? 20 :
+           (this.epaisseur <= 27 - 3) ? 27 :
+           (this.epaisseur <= 35 - 3) ? 35 :
+           this.epaisseur + 10;
+  }
+
+  get name(){
+    return this.names.join(' ')
+  }
+
+  set_name() {
+    return this.update_new({
+      ...this,
+      names: Array.from(arguments),
+    })
+  }
+
+  add_name() {
+    return this.update_new({
+      ...this,
+      names: this.names.concat(Array.from(arguments)),
+    })
+  }
+
+  build(longueur, largeur, epaisseur) {
+    return this.update_new({
+      ...this,
+      arrasement:      longueur,
+      longueur:        longueur,
+      largeur:         largeur,
+      epaisseur:       epaisseur,
+    })
   }
 
   ajout_tenons(longueur_tenon1, longueur_tenon2) {
     if(longueur_tenon2 === undefined) longueur_tenon2 = longueur_tenon1
-    return Object.assign(Object.create(Piece.prototype), {
+    return this.update_new({
       ...this,
       arrasement:      this.arrasement || this.longueur,
       longueur:        this.longueur + longueur_tenon1 + longueur_tenon2,
@@ -54,7 +89,7 @@ export default class Piece {
 
   usine_tenons(longueur_tenon1, longueur_tenon2) {
     if(longueur_tenon2 === undefined) longueur_tenon2 = longueur_tenon1
-    return Object.assign(Object.create(Piece.prototype), {
+    return this.update_new({
       ...this,
       arrasement:      this.arrasement - longueur_tenon1 - longueur_tenon2,
       longueur_tenon1: (this.longueur_tenon1 || 0) + longueur_tenon1,
@@ -94,12 +129,12 @@ export default class Piece {
   //  zxy           la  ep  Lo    traverse horiz av/ar
   //  zyx           ep  la  Lo    traverse de coté
   put(x, y, z, orient){
-    return Object.assign(Object.create(Piece.prototype), {
+    return this.update_new({
       ...this,
-      'x':      x,
-      'y':      y,
-      'z':      z,
-      'orient': get_orient(orient)
+      'x':      x || this.x,
+      'y':      y || this.y,
+      'z':      z || this.z,
+      'orient': orient ? get_orient(orient) : this.orient,
     })
   }
 
@@ -196,5 +231,26 @@ export default class Piece {
 
   prix(prix_cube, factor) {
     return this.cubage(factor) * prix_cube
+  }
+
+  signature() {
+    return JSON.stringify(
+      Object.keys(this)
+        .sort()
+        .filter(k => (! ['names', 'x', 'y', 'z', 'orient', 'que'].includes(k)))
+        .map(k => [k, this[k]])
+        .reduce((a, b) => a.concat(b), []))
+  }
+
+  merge(other){
+    console.assert(this.signature() == other.signature())
+    return this.update_new({
+      ...this,
+      que:   (this.que || 1) + (other.que || 1),
+      names: this.names
+        .filter((n) => other.names.includes(n))
+        .concat(this.names.filter((n) => !other.names.includes(n) && !other.names.includes(`(${n})`)).map(x => x[0] == '(' ? x : `(${x})`))
+        .concat(other.names.filter((n) => !this.names.includes(n) && !this.names.includes(`(${n})`)).map(x => x[0] == '(' ? x : `(${x})`))
+    })
   }
 }

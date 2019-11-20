@@ -1,6 +1,7 @@
 <script>
   import Component from '../Component.svelte';
   import Piece from '../pieces/piece.js';
+  import SVGPiece from '../pieces/SVGPiece.svelte';
   import ListeDebit from '../ListeDebit.svelte'
 
   export let path
@@ -52,71 +53,218 @@
 
   let zoom = 0.5;
 
-  $: montants = new Piece(
-    opt.hauteur,
-    opt.largeur_montants,
-    opt.epaisseur_montants)
+  $: montants = new Piece()
+    .add_name("Montant")
+    .build(
+      opt.hauteur,
+      opt.largeur_montants,
+      opt.epaisseur_montants)
 
-  $: traverses_cote = new Piece(
-    opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
-    opt.largeur_traverses,
-    opt.epaisseur_montants,
-    opt.profondeur - 2 * (opt.largeur_montants))
+  $: montant_ar_g = montants
+    .add_name("arrière-gauche")
+    .put(0, 0, 0, 'yzx')
 
-  $: panneaux_cote = new Piece(
-    opt.hauteur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-    opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
-    opt.epaisseur_panneau)
+  $: montant_av_g = montants
+    .add_name("avant-gauche")
+    .put(opt.largeur - montants.epaisseur, 0, opt.profondeur - montants.largeur, 'yzx')
 
-  $: traverses = new Piece(
-    opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
-    opt.profondeur_traverses,
-    opt.epaisseur_montants,
-    opt.largeur - 2 * opt.epaisseur_montants)
+  $: montant_ar_d = montants
+    .add_name("arrière-droit")
+    .put(opt.largeur - montants.epaisseur, 0, 0, 'yzx')
 
-  $: panneaux_haut_bas = new Piece(
-    opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-    opt.profondeur - 2 * (opt.profondeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
-    opt.epaisseur_panneau)
+  $: montant_av_d = montants
+    .add_name("avant-droit")
+    .put(0, 0, opt.profondeur - montants.largeur, 'yzx')
 
-  $: panneaux_dos = opt.subdivisions.map((s) => (new Piece(
-    opt.hauteur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-    s.largeur + opt.epaisseur_montants - opt.largeur_montants / 2
-              + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
-    opt.epaisseur_panneau)))
+  $: traverses_cote = new Piece()
+    .add_name("Traverse", "coté")
+    .build(
+      opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
+      opt.largeur_traverses,
+      opt.epaisseur_montants)
+    .usine_tenons(opt.profondeur_tenons_cotes)
+    .put(null, null, opt.largeur_montants - opt.profondeur_tenons_cotes, 'zyx')
 
-  $: montants_inter = opt.montants_inter.map((m) => (new Piece(
-    opt.hauteur - 2 * (opt.epaisseur_montants - m.longueur_tenon),
-    opt.largeur_montants,
-    opt.epaisseur_montants,
-    opt.hauteur - 2 * opt.epaisseur_montants)))
+  $: traverse_cote_h_g = traverses_cote
+    .add_name("haut-gauche")
+    .put(0, 0)
 
-  $: traverses_inter = opt.montants_inter.map((m) => (new Piece(
-    opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
-    opt.largeur_traverses,
-    opt.epaisseur_montants,
-    opt.profondeur - 2 * opt.largeur_montants)))
+  $: traverse_cote_b_g = traverses_cote
+    .add_name("bas-gauche")
+    .put(0, opt.hauteur - traverses_cote.largeur)
 
-  $: panneaux_inter = opt.montants_inter.map((m) => (new Piece(
-    opt.hauteur - 2 * (opt.epaisseur_montants + opt.largeur_traverses)
+  $: traverse_cote_h_d = traverses_cote
+    .add_name("haut-droit")
+    .put(opt.largeur - traverses_cote.epaisseur, 0)
+
+  $: traverse_cote_b_d = traverses_cote
+    .add_name("bas-droit")
+    .put(opt.largeur - traverses_cote.epaisseur, opt.hauteur - traverses_cote.largeur)
+
+  $: panneaux_cote = new Piece()
+    .add_name("Panneau", "coté")
+    .build(
+      opt.hauteur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.epaisseur_panneau)
+    .put(null,
+      opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure,
+      opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+      'yzx')
+
+  $: panneau_cote_g = panneaux_cote
+    .add_name("gauche")
+
+  $: panneau_cote_d = panneaux_cote
+    .add_name("droite")
+    .put(opt.largeur - montants.epaisseur)
+
+  $: traverses = new Piece()
+    .add_name("Traverse")
+    .build(
+      opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
+      opt.profondeur_traverses,
+      opt.epaisseur_montants)
+    .usine_tenons(opt.profondeur_tenons)
+    .put(opt.epaisseur_montants - opt.profondeur_tenons, null, null, 'xzy')
+
+  $: traverse_ar_h = traverses
+    .add_name("arrière-haut")
+    .put(null, 0, 0)
+
+  $: traverse_ar_b = traverses
+    .add_name("arrière-bas")
+    .put(null, opt.hauteur - traverses.epaisseur, 0)
+
+  $: traverse_av_h = traverses
+    .add_name("avant-haut")
+    .put(null, 0, opt.profondeur - traverses.largeur)
+
+  $: traverse_av_b = traverses
+    .add_name("avant-bas")
+    .put(null, opt.hauteur - traverses.epaisseur, opt.profondeur - traverses.largeur)
+
+  $: panneaux_haut_bas = new Piece()
+    .add_name("Panneau")
+    .build(
+      opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.profondeur - 2 * (opt.profondeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.epaisseur_panneau)
+    .put(
+      opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+      null,
+      opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+      'xzy')
+
+  $: panneau_h = panneaux_haut_bas
+    .add_name("haut")
+    .put(null, 0)
+
+  $: panneau_b = panneaux_haut_bas
+    .add_name("bas")
+    .put(null, opt.hauteur - panneaux_haut_bas.epaisseur)
+
+  $: panneaux_dos = opt.subdivisions.map((s, i) => (new Piece()
+    .add_name("Panneau", "dos", `n°${i+1}`)
+    .build(
+      opt.hauteur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+      s.largeur + opt.epaisseur_montants - opt.largeur_montants / 2
                 + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
-    opt.profondeur - 2 * (opt.largeur_montants)
-                   + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
-    opt.epaisseur_panneau)))
+      opt.epaisseur_panneau)
+    .put(
+      opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure
+        + opt.subdivisions.splice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0),
+        + i * opt.epaisseur_montants,
+      opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+      0, 'yxz')))
+
+  $: montants_inter = opt.montants_inter.map((m, i) => (new Piece()
+    .add_name("Montant", "intermédiaire", `n°${i+1}`)
+    .build(
+      opt.hauteur - 2 * (opt.epaisseur_montants - m.longueur_tenon),
+      opt.largeur_montants,
+      opt.epaisseur_montants)
+    .usine_tenons(m.longueur_tenon)
+    .put(
+      opt.epaisseur_montants
+        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0),
+        + i * opt.epaisseur_montants,
+      opt.epaisseur_montants - m.longueur_tenon,
+      null,
+      'yzx')))
+
+  $: montants_inter_av = montants_inter.map((m, i) => (m
+    .add_name("avant")
+    .put(null, null, opt.profondeur - m.largeur)))
+
+  $: montants_inter_ar = montants_inter.map((m, i) => (m
+    .add_name("arrière")
+    .put(null, null, 0)))
+
+  $: traverses_inter = opt.montants_inter.map((m, i) => (new Piece()
+    .add_name("Traverse", "intermédiaire", `n°${i+1}`)
+    .build(
+      opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
+      opt.largeur_traverses,
+      opt.epaisseur_montants)
+    .usine_tenons(opt.profondeur_tenons_cotes)
+    .put(
+      opt.epaisseur_montants
+        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0),
+        + i * opt.epaisseur_montants,
+      null,
+      opt.largeur_montants - opt.profondeur_tenons_cotes,
+      'zyx')))
+
+  $: traverses_inter_h = traverses_inter.map((t, i) => (t
+    .add_name("haut")
+    .put(null, opt.epaisseur_montants)))
+
+  $: traverses_inter_b = traverses_inter.map((t, i) => (t
+    .add_name("bas")
+    .put(null, opt.hauteur - opt.epaisseur_montants - t.largeur)))
+
+  $: panneaux_inter = opt.montants_inter.map((m, i) => (new Piece()
+    .add_name("Panneau", "intermédiaire", `n°${i+1}`)
+    .build(
+      opt.hauteur - 2 * (opt.epaisseur_montants + opt.largeur_traverses)
+                  + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
+      opt.profondeur - 2 * (opt.largeur_montants)
+                     + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
+      opt.epaisseur_panneau)
+    .put(
+      opt.epaisseur_montants + opt.subdivisions[i].largeur,
+      opt.epaisseur_montants + opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure,
+      opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+      'yzx')))
+
+  $: pieces2 = [
+    montant_ar_g, montant_av_g, montant_ar_d, montant_av_d,
+    traverse_cote_b_d, traverse_cote_b_g, traverse_cote_h_d, traverse_cote_h_g,
+    panneau_cote_g, panneau_cote_d,
+    traverse_av_h, traverse_av_b, traverse_ar_h, traverse_ar_b,
+    panneau_h, panneau_b,
+  ]
+    .concat(panneaux_dos)
+    .concat(panneaux_inter)
+    .concat(montants_inter_ar)
+    .concat(montants_inter_av)
+    .concat(traverses_inter_h)
+    .concat(traverses_inter_b)
 
   $: pieces = [
       {
-        nom: 'Montants',
+        nom: 'Montant',
         que: 4,
         piece: montants
       },
       {
-        nom: 'Traverses',
+        nom: 'Traverse simples',
         que: 4,
         piece: traverses
       },
       {
-        nom: 'Traverses coté',
+        nom: 'Traverse coté',
         que: 4,
         piece: traverses_cote
       },
@@ -304,11 +452,11 @@
   <div class="main">
 
     <h1>Calcul d'un caisson</h1>
-    <h2>{data.name}</h2>
+    <h2>Caisson {data.name}</h2>
 
     <div style="float: left">
     <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
-    <svg
+    <svg style="display: none"
         width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
         height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
       <g transform="translate(5, 5) scale({zoom} {zoom})">
@@ -406,6 +554,25 @@
           width="{montants.epaisseur}" height="{montants.largeur}" />
       </g>
     </svg>
+    <svg
+        width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
+        height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
+      <g transform="translate(5, 5) scale({zoom} {zoom})">
+        {#each pieces2 as piece}
+          <SVGPiece piece={piece} pos="xy" />
+        {/each}
+      </g>
+      <g transform="translate({5 + zoom*opt.largeur + 10}, 5) scale({zoom} {zoom})">
+        {#each pieces2 as piece}
+          <SVGPiece piece={piece} pos="zy" />
+        {/each}
+      </g>
+      <g transform="translate(5, {5 + zoom*(opt.hauteur) + 5}) scale({zoom} {zoom})">
+        {#each pieces2 as piece}
+          <SVGPiece piece={piece} pos="xz" />
+        {/each}
+      </g>
+    </svg>
     </div>
 
     <form style="float: left">
@@ -484,6 +651,7 @@
     </form>
 
     <hr class="clear"/>
-    <ListeDebit pieces={pieces} />
+    <ListeDebit pieces={pieces2} />
+    <ListeDebit pieces={pieces} merge={false} />
   </div>
 </Component>

@@ -23,6 +23,7 @@
     profondeur_profil: 15,
     jeu_rainure: 1,
     epaisseur_panneau: 10,
+    inclure_panneau: true,
     ...data.opt,
   }
 
@@ -31,58 +32,65 @@
 
   let zoom = 0.5
 
-  $: montant = new Piece(opt.hauteur, opt.largeur_montants, opt.epaisseur)
-  $: montant_g = montant.put(0,                                  0, 0, 'yxz')
-  $: montant_d = montant.put(opt.largeur - opt.largeur_montants, 0, 0, 'yxz')
+  $: montant = new Piece()
+    .add_name("Montant")
+    .build(opt.hauteur, opt.largeur_montants, opt.epaisseur)
+  $: montant_g = montant
+    .add_name("gauche")
+    .put(0, 0, 0, 'yxz')
+  $: montant_d = montant
+    .add_name("droit")
+    .put(opt.largeur - opt.largeur_montants, 0, 0, 'yxz')
+
   $: traverse =
-    (opt.type == 'contre-profil')  ? new Piece(
-      opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil),
-      opt.largeur_traverses,
-      opt.epaisseur):
-    (opt.type == 'tenon-mortaise') ? new Piece(
-      opt.largeur - 2 * opt.largeur_montants,
-      opt.largeur_traverses,
-      opt.epaisseur).ajout_tenons(opt.profondeur_tenons):
-    null;
+    (opt.type == 'contre-profil')  ? new Piece()
+      .add_name("Traverse")
+      .build(
+        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil),
+        opt.largeur_traverses,
+        opt.epaisseur):
+    (opt.type == 'tenon-mortaise') ? new Piece()
+      .add_name("Traverse")
+      .build(
+        opt.largeur - 2 * opt.largeur_montants,
+        opt.largeur_traverses,
+        opt.epaisseur)
+      .ajout_tenons(opt.profondeur_tenons):
+    new Piece();
   $: traverse_xpos =
     (opt.type == 'contre-profil')  ? opt.largeur_montants - opt.profondeur_profil:
     (opt.type == 'tenon-mortaise') ? opt.largeur_montants - opt.profondeur_tenons:
     0;
-  $: traverse_h = traverse.put(traverse_xpos, 0,                            0, 'xyz')
-  $: traverse_b = traverse.put(traverse_xpos, opt.hauteur-traverse.largeur, 0, 'xyz')
+  $: traverse_h = traverse
+    .add_name("haut")
+    .put(traverse_xpos, 0, 0, 'xyz')
+  $: traverse_b = traverse
+    .add_name("bas")
+    .put(traverse_xpos, opt.hauteur-traverse.largeur, 0, 'xyz')
   $: panneau = (
-    (opt.type == 'contre-profil')  ? new Piece(
-      opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-      opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
-      opt.epaisseur_panneau):
-    (opt.type == 'tenon-mortaise') ? new Piece(
-      opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-      opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
-      opt.epaisseur_panneau):
-    null
-  ).put(
-    montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
-    traverse.largeur - opt.profondeur_rainure + opt.jeu_rainure,
-    0,
-    'xyz')
+    (opt.type == 'contre-profil')  ? new Piece()
+      .build(
+        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.epaisseur_panneau):
+    (opt.type == 'tenon-mortaise') ? new Piece()
+      .build(
+        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.epaisseur_panneau):
+    new Piece())
+    .add_name("Panneau")
+    .put(
+      montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+      traverse.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+      0,
+      'xyz')
 
   $: pieces = [
-      {
-        nom: 'Montants',
-        que: 2,
-        piece: montant
-      },
-      {
-        nom: 'Traverses',
-        que: 2,
-        piece: traverse
-      },
-      {
-        nom: 'Panneau',
-        que: 1,
-        piece: panneau
-      }
-    ]
+    opt.inclure_panneau ? panneau : null,
+    traverse_h, traverse_b,
+    montant_g, montant_d,
+  ].filter(x => x != null)
 </script>
 
 <style>
@@ -108,7 +116,7 @@
   <div class="main">
 
     <h1>Calcul d'une porte</h1>
-    <h2>{data.name}</h2>
+    <h2>Porte {data.name}</h2>
 
     <div style="float: left">
     <!--<img src="porte.svg" />-->
@@ -149,11 +157,9 @@
           }
         ]} />
       <g transform="translate(20, 60) scale({zoom} {zoom})">
-        <SVGPiece piece={panneau} pos="avant" />
-        <SVGPiece piece={traverse_h} pos="avant" />
-        <SVGPiece piece={traverse_b} pos="avant" />
-        <SVGPiece piece={montant_g} pos="avant" />
-        <SVGPiece piece={montant_d} pos="avant" />
+        {#each pieces as piece}
+          <SVGPiece piece={piece} pos="avant" />
+        {/each}
       </g>
     </svg>
     </div>
@@ -179,6 +185,7 @@
     {:else if opt.type == 'contre-profil' }
     <label><span>Profondeur profil : </span><input type=number bind:value={opt.profondeur_rainure} min=0/> mm</label>
     {/if}
+    <label><input type="checkbox" bind:checked={opt.inclure_panneau} /> Inclure le paneau</label>
     </form>
 
     <hr class="clear"/>
