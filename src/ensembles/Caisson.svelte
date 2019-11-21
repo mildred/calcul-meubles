@@ -13,22 +13,15 @@
     type:  'contre-profil',
     largeur: 400,
     hauteur: 600,
-    divisions: 1,
     profondeur: 300,
     epaisseur_montants: 24,
     largeur_montants: 50,
     largeur_traverses: 50,
-    profondeur_traverses: 50,
     profondeur_tenons_cotes: 30,
     profondeur_tenons: 20,
     profondeur_rainure: 10,
     jeu_rainure: 1,
     epaisseur_panneau: 16,
-    portes: [
-      {
-        type: 'aucune'
-      }
-    ],
     montants_inter: [
     ],
     colonnes: [
@@ -57,23 +50,18 @@
 
   $: updateSubdivisions(num_colonnes)
   $: calculLargeurs(largeur_colonnes)
-  $: calculPortes(opt.portes, opt)
+  $: calculPortes(opt)
 
   function updateSubdivisions(num_colonnes){
-    opt.divisions      = num_colonnes
-    opt.portes         = opt.portes.slice(0, num_colonnes)
     opt.colonnes       = opt.colonnes.slice(0, num_colonnes)
     opt.montants_inter = opt.montants_inter.slice(0, num_colonnes-1)
     largeur_colonnes   = largeur_colonnes.slice(0, num_colonnes)
 
     for(let i = 0; i<num_colonnes; i++) {
       largeur_colonnes[i] = largeur_colonnes[i] || null
-      opt.portes[i] = {
-        type: 'aucune',
-        ...opt.portes[i],
-      }
       opt.colonnes[i] = {
         largeur: null,
+        porte: {},
         ...opt.colonnes[i],
       }
       if (i<num_colonnes - 1) {
@@ -112,12 +100,12 @@
     }
   }
 
-  function calculPortes(portes, opt){
-    //console.log(`Caisson(${path}) Recalcul des portes %o %o`, portes, opt)
+  function calculPortes(opt){
+    //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
     if(!data.children) data.children = []
-    for(let i = 0; i<Math.max(portes.length, opt.divisions); i++) {
-      let porte = portes[i]
-      if(i >= opt.divisions || !porte || porte.type == 'aucune'){
+    for(let i = 0; i < opt.colonnes.length; i++) {
+      let porte = opt.colonnes[i].porte || {}
+      if(!porte || porte.type == 'aucune'){
         data.children[i] = {
           ...data.children[i],
           type: null,
@@ -130,12 +118,14 @@
           id:   i,
           forceopt: {
             largeur:
-              (porte.type == 'total') ? opt.largeur :
-              (porte.type == 'demi')  ? opt.largeur - opt.epaisseur_montants :
+              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
+              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
               0,
             hauteur:
-              (porte.type == 'total') ? opt.hauteur :
-              (porte.type == 'demi')  ? opt.hauteur - opt.epaisseur_montants :
+              (porte.type == 'total')    ? opt.hauteur :
+              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
               0,
           },
         }
@@ -213,7 +203,7 @@
     .add_name("Traverse")
     .build(
       opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
-      opt.profondeur_traverses,
+      opt.largeur_traverses,
       opt.epaisseur_montants)
     .usine_tenons(opt.profondeur_tenons)
     .put(opt.epaisseur_montants - opt.profondeur_tenons, null, null, 'xzy')
@@ -238,7 +228,7 @@
     .add_name("Panneau")
     .build(
       opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-      opt.profondeur - 2 * (opt.profondeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
       opt.epaisseur_panneau)
     .put(
       opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
@@ -407,21 +397,23 @@
         style="width: 5em" />
       {/each}
       mm
-      {#if largeur_colonnes.filter(x => (x && x != 0)).length == largeur_colonnes.length}
-        Attention : trop de largeurs sont définies en même temps
-      {/if}
     </p>
+    {#if largeur_colonnes.filter(x => (x && x != 0)).length == largeur_colonnes.length}
+    <p>Attention : trop de largeurs sont définies en même temps</p>
+    {/if}
     {/if}
 
     <hr/>
 
-    <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={opt.epaisseur_montants} min=0/> mm </label>
-    <label><span>Épaisseur panneau : </span><input type=number bind:value={opt.epaisseur_panneau} min=0/> mm </label>
+    <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={opt.epaisseur_montants} min=0/> mm</label>
     <label><span>Largeur montants : </span><input type=number bind:value={opt.largeur_montants} min=0/> mm</label>
-    <label><span>Largeur traverses cotés : </span><input type=number bind:value={opt.largeur_traverses} min=0/> mm</label>
-    <label><span>Largeur traverses : </span><input type=number bind:value={opt.profondeur_traverses} min=0/> mm</label>
+    <label><span>Largeur traverses : </span><input type=number bind:value={opt.largeur_traverses} min=0/> mm</label>
     <label><span>Profondeur tenons cotés : </span><input type=number bind:value={opt.profondeur_tenons_cotes} min=0/> mm</label>
     <label><span>Profondeur tenons : </span><input type=number bind:value={opt.profondeur_tenons} min=0/> mm</label>
+
+    <hr/>
+
+    <label><span>Épaisseur panneau : </span><input type=number bind:value={opt.epaisseur_panneau} min=0/> mm </label>
     <label><span>Profondeur rainure : </span><input type=number bind:value={opt.profondeur_rainure} min=0/> mm</label>
     <label><span>Jeu panneau / rainure : </span><input type=number bind:value={opt.jeu_rainure} min=0/> mm</label>
 
@@ -432,14 +424,12 @@
         <th>Longueur tenon montant</th>
       </tr>
       {#each opt.montants_inter as montant_inter, i}
-      {#if i < opt.divisions - 1}
       <tr>
         <td>Montant intermédiaire {i+1}</td>
         <td>
           <input type=number bind:value={opt.montants_inter[i].longueur_tenon} min=0/> mm
         </td>
       </tr>
-      {/if}
       {/each}
     </table>
 
@@ -449,19 +439,18 @@
         <th></th>
         <th>Type</th>
       </tr>
-      {#each opt.portes as porte, i}
-      {#if i < opt.divisions}
+      {#each opt.colonnes as colonne, i}
       <tr>
         <td>Porte {i+1}</td>
         <td>
-          <select bind:value={opt.portes[i].type}>
+          <select bind:value={colonne.porte.type}>
             <option value="aucune">Aucune</option>
             <option value="total">Recouvrement total</option>
             <option value="demi">Recouvrement à moitié</option>
+            <option value="encastre">Encastré</option>
           </select>
         </td>
       </tr>
-      {/if}
       {/each}
     </table>
 
