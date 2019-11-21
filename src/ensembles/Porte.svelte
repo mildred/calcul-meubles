@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import InputNumber from '../controls/InputNumber.svelte';
+  import InputCheckbox from '../controls/InputCheckbox.svelte';
   import Component from '../Component.svelte';
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
@@ -11,7 +13,7 @@
 
   let data = {...initdata}
 
-  export let opt = {
+  let defaults = {
     type:  'contre-profil',
     largeur: 400,
     hauteur: 600,
@@ -24,13 +26,23 @@
     jeu_rainure: 1,
     epaisseur_panneau: 10,
     inclure_panneau: true,
-    ...data.opt,
+    ...initdata.defaults
   }
 
+  let opt = { ...initdata.opt }
+  let ui  = { ...initdata.ui }
+
+  $: opt      = {...defaults, ...cleanObject(ui)}
   $: data.opt = opt
-  $: opt = {...opt, ...initdata.forceopt}
+  $: data.ui  = ui
 
   let zoom = 0.5
+
+  function cleanObject(src){
+    return Object.keys(src)
+      .filter(k => (src[k] != null))
+      .reduce((m, k) => (m[k] = src[k], m), {})
+  }
 
   $: montant = new Piece()
     .add_name("Montant")
@@ -167,25 +179,27 @@
     <form style="float: left">
     <label>
       <span>Type : </span>
-      <select bind:value={opt.type}>
+      <select bind:value={ui.type}>
         <option value="tenon-mortaise">tenon et mortaise</option>
         <option value="contre-profil">contre profil</option>
       </select>
     </label>
-    <label><span>Largeur : </span><input type=number bind:value={opt.largeur} min=0/> mm</label>
-    <label><span>Hauteur : </span><input type=number bind:value={opt.hauteur} min=0/> mm </label>
-    <label><span>Épaisseur : </span><input type=number bind:value={opt.epaisseur} min=0/> mm </label>
-    <label><span>Épaisseur panneau : </span><input type=number bind:value={opt.epaisseur_panneau} min=0/> mm </label>
-    <label><span>Largeur montants : </span><input type=number bind:value={opt.largeur_montants} min=0/> mm</label>
-    <label><span>Hauteur traverses : </span><input type=number bind:value={opt.largeur_traverses} min=0/> mm</label>
-    <label><span>Profondeur rainure : </span><input type=number bind:value={opt.profondeur_rainure} min=0/> mm</label>
-    <label><span>Jeu panneau / rainure : </span><input type=number bind:value={opt.jeu_rainure} min=0/> mm</label>
+    <label><span>Largeur   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
+    <label><span>Hauteur   : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>
+    <label><span>Épaisseur : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.epaisseur} force={defaults.force_epaisseur}/> mm</label>
+    <hr/>
+    <label><span>Largeur traverses : </span><InputNumber min=0 bind:value={ui.largeur_montants} def={defaults.largeur_montants}/> mm</label>
+    <label><span>Épaisseur panneau : </span><InputNumber min=0 bind:value={ui.largeur_traverses} def={defaults.largeur_traverses}/> mm</label>
+    <hr/>
+    <label><span>Largeur montants : </span><InputNumber min=0 bind:value={ui.epaisseur_panneau} def={defaults.epaisseur_panneau}/> mm</label>
+    <label><span>Profondeur rainures : </span><InputNumber min=0 bind:value={ui.profondeur_rainure} def={defaults.profondeur_rainure}/> mm</label>
+    <label><span>Jeu paneau / rainure : </span><InputNumber min=0 bind:value={ui.jeu_rainure} def={defaults.jeu_rainure}/> mm</label>
     {#if opt.type == 'tenon-mortaise' }
-    <label><span>Profondeur tenons : </span><input type=number bind:value={opt.profondeur_tenons} min=0/> mm</label>
+    <label><span>Profondeur tenons : </span><InputNumber min=0 bind:value={ui.profondeur_tenons} def={defaults.profondeur_tenons}/> mm</label>
     {:else if opt.type == 'contre-profil' }
-    <label><span>Profondeur profil : </span><input type=number bind:value={opt.profondeur_rainure} min=0/> mm</label>
+    <label><span>Profondeur profil : </span><InputNumber min=0 bind:value={ui.profondeur_profil} def={defaults.profondeur_profil}/> mm</label>
     {/if}
-    <label><input type="checkbox" bind:checked={opt.inclure_panneau} /> Inclure le paneau</label>
+    <label><span>Inclure le paneau</span><InputCheckbox bind:checked={ui.inclure_panneau} def={defaults.inclure_panneau} /></label>
     </form>
 
     <hr class="clear"/>

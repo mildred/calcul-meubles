@@ -116,6 +116,27 @@
           type: 'Porte',
           name: `${i+1}`,
           id:   i,
+          defaults: {
+            force_largeur: true,
+            force_hauteur: true,
+            largeur:
+              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
+              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
+              0,
+            hauteur:
+              (porte.type == 'total')    ? opt.hauteur :
+              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
+              0,
+              epaisseur: opt.epaisseur_montants,
+              largeur_montants: opt.largeur_montants,
+              largeur_traverses: opt.largeur_traverses,
+              profondeur_tenons: opt.profondeur_tenons,
+              profondeur_rainure: opt.profondeur_rainure,
+              jeu_rainure: opt.jeu_rainure,
+              epaisseur_panneau: opt.epaisseur_panneau,
+          },
           forceopt: {
             largeur:
               (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
@@ -387,9 +408,8 @@
     <label><span>Profondeur : </span><input type=number bind:value={opt.profondeur} min=0/> mm </label>
     <label><span>Colonnes   : </span><input type=number bind:value={num_colonnes} min=1/></label>
 
-    {#if opt.colonnes.length > 1}
     <p>
-      Répartition en largeur :
+      <span>Largeur intérieure des colonnes :</span>
       {#each opt.colonnes as colonne, i}
       <input type=number min=0
         placeholder={colonne.largeur}
@@ -400,7 +420,6 @@
     </p>
     {#if largeur_colonnes.filter(x => (x && x != 0)).length == largeur_colonnes.length}
     <p>Attention : trop de largeurs sont définies en même temps</p>
-    {/if}
     {/if}
 
     <hr/>
