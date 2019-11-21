@@ -29,11 +29,11 @@
         type: 'aucune'
       }
     ],
-    subdivisions: [
+    montants_inter: [
+    ],
+    colonnes: [
       {
       }
-    ],
-    montants_inter: [
     ],
     ...data.opt
   }
@@ -51,135 +51,97 @@
 
   $: data.opt = opt
 
-  let divisions = opt.divisions
   let zoom = 0.5;
+  let num_colonnes = Math.max(opt.colonnes.length, 1)
+  let largeur_colonnes = opt.colonnes.map(c => (c.largeur_definie ? c.largeur : null))
 
-  $: updateSubdivisions(divisions)
+  $: updateSubdivisions(num_colonnes)
+  $: calculLargeurs(largeur_colonnes)
   $: calculPortes(opt.portes, opt)
 
-  function updateSubdivisions(divisions){
-    opt.divisions      = divisions
-    opt.portes         = opt.portes.slice(0, divisions)
-    opt.subdivisions   = opt.subdivisions.slice(0, divisions)
-    opt.montants_inter = opt.montants_inter.slice(0, divisions-1)
+  function updateSubdivisions(num_colonnes){
+    opt.divisions      = num_colonnes
+    opt.portes         = opt.portes.slice(0, num_colonnes)
+    opt.colonnes       = opt.colonnes.slice(0, num_colonnes)
+    opt.montants_inter = opt.montants_inter.slice(0, num_colonnes-1)
+    largeur_colonnes   = largeur_colonnes.slice(0, num_colonnes)
 
-    let xpos = opt.epaisseur_montants
-    for(let i = 0; i<divisions; i++) {
+    for(let i = 0; i<num_colonnes; i++) {
+      largeur_colonnes[i] = largeur_colonnes[i] || null
       opt.portes[i] = {
         type: 'aucune',
         ...opt.portes[i],
       }
-      opt.subdivisions[i] = {
-        largeur: 0,
-        ...opt.subdivisions[i],
+      opt.colonnes[i] = {
+        largeur: null,
+        ...opt.colonnes[i],
       }
-      xpos += opt.subdivisions[i].largeur
-      if (i<divisions - 1) {
+      if (i<num_colonnes - 1) {
         opt.montants_inter[i] = {
           longueur_tenon: 20,
           ...opt.montants_inter[i],
-          xpos: xpos,
         }
       }
-      xpos += opt.epaisseur_montants
     }
-
-    return; // FIXME
-    let subdivisions_fixes = opt.subdivisions
-      .map((s, i) => s.largeur ? i : null)
-      .filter((i) => i !== null)
-    if(subdivisions_fixes.length < opt.subdivisions.length)
-      calculLargeurSubdivisions(subdivisions_fixes)
   }
 
-    function calculLargeurSubdivisions(fixe){
-      fixe = fixe || []
-      let subdivisions = opt.subdivisions.filter((s, i) => (i < opt.divisions))
-      let espace_a_repartir = opt.largeur - (opt.divisions+1) * opt.epaisseur_montants
+  function calculLargeurs(largeurs){
+    let cols = opt.colonnes.length
+    let espace_a_repartir = opt.largeur - (cols+1) * opt.epaisseur_montants
+    let largeurs_definies = largeurs.filter(x => (x && x != 0))
+    let cols_a_calculer = largeurs.length - largeurs_definies.length
+    let espace_reparti = largeurs_definies.reduce((a,b) => (a+b), 0)
+    let espace_restant = espace_a_repartir - espace_reparti
+    let espace_par_col = Math.floor(espace_restant / cols_a_calculer)
 
-      let espace_defini = subdivisions
-        .map((s) => (s.largeur))
-        .reduce((a,b) => (a+b), 0)
-      console.log("calculLargeurSubdivisions(%o) defini = %o, a_repartir = %o", fixe, espace_defini, espace_a_repartir)
-      if(espace_defini == espace_a_repartir) return;
+    for(let i = 0; i < cols; i++) {
+      if(largeurs[i] && largeurs[i] != 0) {
+        opt.colonnes[i].largeur_definie = true
+        opt.colonnes[i].largeur = largeurs[i]
+      } else if(cols_a_calculer == 1) {
+        opt.colonnes[i].largeur_definie = false
+        opt.colonnes[i].largeur = espace_restant
+        cols_a_calculer = 0
+        espace_restant = 0
+      } else {
+        opt.colonnes[i].largeur_definie = false
+        opt.colonnes[i].largeur = espace_par_col
+        espace_restant -= espace_par_col
+        cols_a_calculer -= 1
+      }
+    }
+  }
 
-      let subdivision_fixes = subdivisions.filter((s, i) => (fixe.includes(i)))
-      if (subdivision_fixes.length >= opt.divisions)
-        subdivision_fixes = []
-
-      espace_a_repartir = espace_a_repartir - subdivision_fixes
-        .map((s) => (s.largeur))
-        .reduce((a,b) => (a+b), 0)
-
-      let espace_reparti = Math.floor(espace_a_repartir / (opt.divisions - subdivision_fixes.length))
-
-      for(let i = 0; i<opt.divisions; i++) {
-        if(fixe.includes(i)) continue;
-        espace_a_repartir = espace_a_repartir - espace_reparti
-        if (espace_a_repartir < espace_reparti) {
-          subdivisions[i].largeur = espace_reparti + espace_a_repartir
-        } else {
-          subdivisions[i].largeur = espace_reparti
+  function calculPortes(portes, opt){
+    //console.log(`Caisson(${path}) Recalcul des portes %o %o`, portes, opt)
+    if(!data.children) data.children = []
+    for(let i = 0; i<Math.max(portes.length, opt.divisions); i++) {
+      let porte = portes[i]
+      if(i >= opt.divisions || !porte || porte.type == 'aucune'){
+        data.children[i] = {
+          ...data.children[i],
+          type: null,
+        }
+      } else {
+        data.children[i] = {
+          ...data.children[i],
+          type: 'Porte',
+          name: `${i+1}`,
+          id:   i,
+          forceopt: {
+            largeur:
+              (porte.type == 'total') ? opt.largeur :
+              (porte.type == 'demi')  ? opt.largeur - opt.epaisseur_montants :
+              0,
+            hauteur:
+              (porte.type == 'total') ? opt.hauteur :
+              (porte.type == 'demi')  ? opt.hauteur - opt.epaisseur_montants :
+              0,
+          },
         }
       }
     }
-
-    function onChangeLargeurSubdivision(e){
-      let i = parseInt(e.target.dataset.idx)
-      console.log('onChangeLargeurSubdivision(i=%d)', i)
-      opt.subdivisions[i].largeur = parseInt(e.target.value)
-      return; // FIXME
-      if(i == opt.divisions - 1)
-        return calculLargeurSubdivisions(Array.from(new Array(i+1).keys()).slice(1))
-      else
-        return calculLargeurSubdivisions(Array.from(new Array(i+1).keys()))
-    }
-
-    function calculPortes(portes, opt){
-      console.log(`Caisson(${path}) Recalcul des portes %o %o`, portes, opt)
-      if(!data.children) data.children = []
-      for(let i = 0; i<Math.max(portes.length, opt.divisions); i++) {
-        let porte = portes[i]
-        if(i >= opt.divisions || !porte || porte.type == 'aucune'){
-          data.children[i] = {
-            ...data.children[i],
-            type: null,
-          }
-        } else {
-          data.children[i] = {
-            ...data.children[i],
-            type: 'Porte',
-            name: `${i+1}`,
-            id:   i,
-            forceopt: {
-              largeur:
-                (porte.type == 'total') ? opt.largeur :
-                (porte.type == 'demi')  ? opt.largeur - opt.epaisseur_montants :
-                0,
-              hauteur:
-                (porte.type == 'total') ? opt.hauteur :
-                (porte.type == 'demi')  ? opt.hauteur - opt.epaisseur_montants :
-                0,
-            },
-          }
-        }
-      }
-    }
-
-    function addPorteRecouvrementTotal(){
-      let name = "Porte recouvrement total"
-      if(!data.children) data.children = []
-      let id = data.children.length
-      data.children = [...data.children, {
-        type: 'Porte',
-        name: name,
-        id:   id,
-        opt: {
-          largeur: opt.largeur,
-          hauteur: opt.hauteur,
-        }
-      }]
-    }
+  }
 
   $: montants = new Piece()
     .add_name("Montant")
@@ -292,22 +254,22 @@
     .add_name("bas")
     .put(null, opt.hauteur - panneaux_haut_bas.epaisseur)
 
-  $: panneaux_dos = opt.subdivisions.map((s, i) => (new Piece()
+  $: panneaux_dos = opt.colonnes.map((c, i) => (new Piece()
     .add_name("Panneau", "dos", `n°${i+1}`)
     .build(
       opt.hauteur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-      s.largeur + opt.epaisseur_montants - opt.largeur_montants / 2
+      c.largeur + opt.epaisseur_montants - opt.largeur_montants / 2
                 + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
       opt.epaisseur_panneau)
     .put(
       opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure
-        + opt.subdivisions.splice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
+        + opt.colonnes.slice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
       opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
       0, 'yxz')))
 
   $: montants_inter = opt.montants_inter.map((m, i) => (new Piece()
-    .add_name("Montant", "intermédiaire", `n°${i+1} ${JSON.stringify(opt.subdivisions)}`)
+    .add_name("Montant", "intermédiaire", `n°${i+1}`)
     .build(
       opt.hauteur - 2 * (opt.epaisseur_montants - m.longueur_tenon),
       opt.largeur_montants,
@@ -315,7 +277,7 @@
     .usine_tenons(m.longueur_tenon)
     .put(
       opt.epaisseur_montants
-        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
+        + opt.colonnes.slice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
       opt.epaisseur_montants - m.longueur_tenon,
       null,
@@ -330,14 +292,16 @@
     .put(null, null, 0)))
 
   $: traverses_inter = opt.montants_inter.map((m, i) => (new Piece()
-    .add_name("Traverse", "intermédiaire", `n°${i+1} ${JSON.stringify(m.xpos)}`)
+    .add_name("Traverse", "intermédiaire", `n°${i+1}`)
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
       opt.epaisseur_montants)
     .usine_tenons(opt.profondeur_tenons_cotes)
     .put(
-      m.xpos,
+      opt.epaisseur_montants
+        + opt.colonnes.slice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
+        + i * opt.epaisseur_montants,
       null,
       opt.largeur_montants - opt.profondeur_tenons_cotes,
       'zyx')))
@@ -360,7 +324,7 @@
       opt.epaisseur_panneau)
     .put(
       opt.epaisseur_montants
-        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
+        + opt.colonnes.slice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
       opt.epaisseur_montants + opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure,
       opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
@@ -379,34 +343,8 @@
     .concat(montants_inter_av)
     .concat(traverses_inter_h)
     .concat(traverses_inter_b)
-
-    let hello = {words: ['hello', 'world']};
+    .filter(x => x)
 </script>
-
-<h1>{JSON.stringify(hello)}</h1>
-
-{#each hello.words as n, i}
-<p>
-  {i}: <input type="text" bind:value={n} />
-</p>
-{/each}
-{JSON.stringify(opt.subdivisions)}
-    <p>
-      Répartition en largeur :
-      {#each opt.subdivisions as subdivision, i}
-      {#if i < opt.divisions}
-      <input type=number min=0 style="width: 5em"
-        data-idx={i} bind:value={subdivision.largeur}
-        />
-      {/if}
-      {/each}
-      mm
-      (largeur totale:
-      {(opt.divisions+1)*opt.epaisseur_montants+opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)})
-      {(opt.divisions+1)*opt.epaisseur_montants}
-      {JSON.stringify(opt.subdivisions)}
-      {opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)}
-    </p>
 
 <style>
   form > label {
@@ -422,12 +360,6 @@
     clear: both;
     border: none;
   }
-  svg rect.outline {
-    fill: rgb(255,255,255);
-    fill-opacity: 0.5;
-    stroke-width: 1;
-    stroke:rgb(0,0,0);
-  }
 </style>
 
 <Component bind:data={data} path={path} on:datachange>
@@ -438,104 +370,6 @@
 
     <div style="float: left">
     <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
-    <svg style="display: none"
-        width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
-        height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
-      <g transform="translate(5, 5) scale({zoom} {zoom})">
-        {#each montants_inter as montant_inter, i}
-          <rect class="outline"
-            x="{opt.epaisseur_montants * (i+1) + opt.subdivisions.slice(0, i+1).map(s => s.largeur).reduce((a,b) => (a+b), 0)}"
-            y="{traverses.epaisseur - montant_inter.longueur_tenon}"
-            width="{montant_inter.epaisseur}"
-            height="{montant_inter.longueur}" />
-        {/each}
-        <rect class="outline"
-          x="{montants.epaisseur - opt.profondeur_tenons}"
-          y="0"
-          width="{traverses.longueur}"
-          height="{traverses.epaisseur}" />
-        <rect class="outline"
-          x="{montants.epaisseur - opt.profondeur_tenons}"
-          y="{opt.hauteur - traverses.epaisseur}"
-          width="{traverses.longueur}"
-          height="{traverses.epaisseur}" />
-        <rect class="outline"
-          x="0"
-          y="0"
-          width="{montants.epaisseur}"
-          height="{montants.longueur}" />
-        <rect class="outline"
-          x="{opt.largeur - montants.epaisseur}"
-          y="0"
-          width="{montants.epaisseur}"
-          height="{montants.longueur}" />
-      </g>
-      <g transform="translate({5 + zoom*opt.largeur + 10}, 5) scale({zoom} {zoom})">
-        <rect class="outline"
-          x="0"
-          y="0"
-          width="{montants.largeur}"
-          height="{montants.longueur}" />
-        <rect class="outline"
-          x="{opt.profondeur - montants.largeur}"
-          y="0"
-          width="{montants.largeur}"
-          height="{montants.longueur}" />
-        <rect class="outline"
-          x="{montants.largeur - opt.profondeur_tenons_cotes}"
-          y="0"
-          width="{traverses_cote.longueur}"
-          height="{traverses_cote.largeur}" />
-        <rect class="outline"
-          x="{montants.largeur - opt.profondeur_tenons_cotes}"
-          y="{opt.hauteur - traverses_cote.largeur}"
-          width="{traverses_cote.longueur}"
-          height="{traverses_cote.largeur}" />
-      </g>
-      <g transform="translate(5, {5 + zoom*opt.hauteur + 5}) scale({zoom} {zoom})">
-        <!-- traverses -->
-        <rect class="outline"
-          x="{montants.epaisseur - opt.profondeur_tenons}"
-          y="0"
-          width="{traverses.longueur}"
-          height="{traverses.epaisseur}" />
-        <rect class="outline"
-          x="{montants.epaisseur - opt.profondeur_tenons}"
-          y="{opt.profondeur - traverses.epaisseur}"
-          width="{traverses.longueur}"
-          height="{traverses.epaisseur}" />
-
-        <!-- traverses cotés -->
-        <rect class="outline"
-          x="0"
-          y="{montants.largeur - opt.profondeur_tenons_cotes}"
-          width="{traverses_cote.epaisseur}"
-          height="{traverses_cote.longueur}" />
-        <rect class="outline"
-          x="{opt.largeur - traverses_cote.epaisseur}"
-          y="{montants.largeur - opt.profondeur_tenons_cotes}"
-          width="{traverses_cote.epaisseur}"
-          height="{traverses_cote.longueur}" />
-
-        <!-- montants -->
-        <rect class="outline"
-          x="0"
-          y="0"
-          width="{montants.epaisseur}" height="{montants.largeur}" />
-        <rect class="outline"
-          x="{opt.largeur - montants.epaisseur}"
-          y="0"
-          width="{montants.epaisseur}" height="{montants.largeur}" />
-        <rect class="outline"
-          x="{opt.largeur - montants.epaisseur}"
-          y="{opt.profondeur - montants.largeur}"
-          width="{montants.epaisseur}" height="{montants.largeur}" />
-        <rect class="outline"
-          x="0"
-          y="{opt.profondeur - montants.largeur}"
-          width="{montants.epaisseur}" height="{montants.largeur}" />
-      </g>
-    </svg>
     <svg
         width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
         height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
@@ -561,24 +395,21 @@
     <label><span>Hauteur    : </span><input type=number bind:value={opt.hauteur} min=0/> mm </label>
     <label><span>Largeur    : </span><input type=number bind:value={opt.largeur} min=0/> mm</label>
     <label><span>Profondeur : </span><input type=number bind:value={opt.profondeur} min=0/> mm </label>
-    <label><span>Divisions  : </span><input type=number bind:value={divisions} min=1/></label>
+    <label><span>Colonnes   : </span><input type=number bind:value={num_colonnes} min=1/></label>
 
-    {#if opt.divisions > 1}
+    {#if opt.colonnes.length > 1}
     <p>
       Répartition en largeur :
-      {#each opt.subdivisions as subdivision, i}
-      {#if i < opt.divisions}
-      <input type=number min=0 style="width: 5em"
-        data-idx={i} bind:value={subdivision.largeur}
-        />
-      {/if}
+      {#each opt.colonnes as colonne, i}
+      <input type=number min=0
+        placeholder={colonne.largeur}
+        bind:value={largeur_colonnes[i]}
+        style="width: 5em" />
       {/each}
       mm
-      (largeur totale:
-      {(opt.divisions+1)*opt.epaisseur_montants+opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)})
-      {(opt.divisions+1)*opt.epaisseur_montants}
-      {JSON.stringify(opt.subdivisions)}
-      {opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)}
+      {#if largeur_colonnes.filter(x => (x && x != 0)).length == largeur_colonnes.length}
+        Attention : trop de largeurs sont définies en même temps
+      {/if}
     </p>
     {/if}
 
