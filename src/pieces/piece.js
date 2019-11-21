@@ -18,7 +18,7 @@ function get_orient(orient){
     case 'zxy': case 'zyx':
       return orient
     default:
-      throw `Unknown position ${pos}`
+      throw `Unknown orient ${orient}`
   }
 }
 
@@ -171,10 +171,10 @@ export default class Piece {
     let [_2, t2x] = this.dim(pos[0], 'longueur_tenon2', 0, 0)
     let [_3, t1y] = this.dim(pos[1], 'longueur_tenon1', 0, 0)
     let [_4, t2y] = this.dim(pos[1], 'longueur_tenon2', 0, 0)
-    console.log(this)
-    console.log([pos, x, dx, y, dy])
-    console.log([pos[0], this.orient.indexOf(pos[0]), t1x, t2x])
-    console.log([pos[1], this.orient.indexOf(pos[1]), t1y, t2y])
+    //console.log(this)
+    //console.log([pos, x, dx, y, dy])
+    //console.log([pos[0], this.orient.indexOf(pos[0]), t1x, t2x])
+    //console.log([pos[1], this.orient.indexOf(pos[1]), t1y, t2y])
     let dx1  = Math.floor(dx/3)
     let dx2 = dx - dx1
     let dy1  = Math.floor(dy/3)

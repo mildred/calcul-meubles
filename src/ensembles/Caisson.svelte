@@ -51,7 +51,135 @@
 
   $: data.opt = opt
 
+  let divisions = opt.divisions
   let zoom = 0.5;
+
+  $: updateSubdivisions(divisions)
+  $: calculPortes(opt.portes, opt)
+
+  function updateSubdivisions(divisions){
+    opt.divisions      = divisions
+    opt.portes         = opt.portes.slice(0, divisions)
+    opt.subdivisions   = opt.subdivisions.slice(0, divisions)
+    opt.montants_inter = opt.montants_inter.slice(0, divisions-1)
+
+    let xpos = opt.epaisseur_montants
+    for(let i = 0; i<divisions; i++) {
+      opt.portes[i] = {
+        type: 'aucune',
+        ...opt.portes[i],
+      }
+      opt.subdivisions[i] = {
+        largeur: 0,
+        ...opt.subdivisions[i],
+      }
+      xpos += opt.subdivisions[i].largeur
+      if (i<divisions - 1) {
+        opt.montants_inter[i] = {
+          longueur_tenon: 20,
+          ...opt.montants_inter[i],
+          xpos: xpos,
+        }
+      }
+      xpos += opt.epaisseur_montants
+    }
+
+    return; // FIXME
+    let subdivisions_fixes = opt.subdivisions
+      .map((s, i) => s.largeur ? i : null)
+      .filter((i) => i !== null)
+    if(subdivisions_fixes.length < opt.subdivisions.length)
+      calculLargeurSubdivisions(subdivisions_fixes)
+  }
+
+    function calculLargeurSubdivisions(fixe){
+      fixe = fixe || []
+      let subdivisions = opt.subdivisions.filter((s, i) => (i < opt.divisions))
+      let espace_a_repartir = opt.largeur - (opt.divisions+1) * opt.epaisseur_montants
+
+      let espace_defini = subdivisions
+        .map((s) => (s.largeur))
+        .reduce((a,b) => (a+b), 0)
+      console.log("calculLargeurSubdivisions(%o) defini = %o, a_repartir = %o", fixe, espace_defini, espace_a_repartir)
+      if(espace_defini == espace_a_repartir) return;
+
+      let subdivision_fixes = subdivisions.filter((s, i) => (fixe.includes(i)))
+      if (subdivision_fixes.length >= opt.divisions)
+        subdivision_fixes = []
+
+      espace_a_repartir = espace_a_repartir - subdivision_fixes
+        .map((s) => (s.largeur))
+        .reduce((a,b) => (a+b), 0)
+
+      let espace_reparti = Math.floor(espace_a_repartir / (opt.divisions - subdivision_fixes.length))
+
+      for(let i = 0; i<opt.divisions; i++) {
+        if(fixe.includes(i)) continue;
+        espace_a_repartir = espace_a_repartir - espace_reparti
+        if (espace_a_repartir < espace_reparti) {
+          subdivisions[i].largeur = espace_reparti + espace_a_repartir
+        } else {
+          subdivisions[i].largeur = espace_reparti
+        }
+      }
+    }
+
+    function onChangeLargeurSubdivision(e){
+      let i = parseInt(e.target.dataset.idx)
+      console.log('onChangeLargeurSubdivision(i=%d)', i)
+      opt.subdivisions[i].largeur = parseInt(e.target.value)
+      return; // FIXME
+      if(i == opt.divisions - 1)
+        return calculLargeurSubdivisions(Array.from(new Array(i+1).keys()).slice(1))
+      else
+        return calculLargeurSubdivisions(Array.from(new Array(i+1).keys()))
+    }
+
+    function calculPortes(portes, opt){
+      console.log(`Caisson(${path}) Recalcul des portes %o %o`, portes, opt)
+      if(!data.children) data.children = []
+      for(let i = 0; i<Math.max(portes.length, opt.divisions); i++) {
+        let porte = portes[i]
+        if(i >= opt.divisions || !porte || porte.type == 'aucune'){
+          data.children[i] = {
+            ...data.children[i],
+            type: null,
+          }
+        } else {
+          data.children[i] = {
+            ...data.children[i],
+            type: 'Porte',
+            name: `${i+1}`,
+            id:   i,
+            forceopt: {
+              largeur:
+                (porte.type == 'total') ? opt.largeur :
+                (porte.type == 'demi')  ? opt.largeur - opt.epaisseur_montants :
+                0,
+              hauteur:
+                (porte.type == 'total') ? opt.hauteur :
+                (porte.type == 'demi')  ? opt.hauteur - opt.epaisseur_montants :
+                0,
+            },
+          }
+        }
+      }
+    }
+
+    function addPorteRecouvrementTotal(){
+      let name = "Porte recouvrement total"
+      if(!data.children) data.children = []
+      let id = data.children.length
+      data.children = [...data.children, {
+        type: 'Porte',
+        name: name,
+        id:   id,
+        opt: {
+          largeur: opt.largeur,
+          hauteur: opt.hauteur,
+        }
+      }]
+    }
 
   $: montants = new Piece()
     .add_name("Montant")
@@ -173,13 +301,13 @@
       opt.epaisseur_panneau)
     .put(
       opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure
-        + opt.subdivisions.splice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0),
+        + opt.subdivisions.splice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
       opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
       0, 'yxz')))
 
   $: montants_inter = opt.montants_inter.map((m, i) => (new Piece()
-    .add_name("Montant", "intermédiaire", `n°${i+1}`)
+    .add_name("Montant", "intermédiaire", `n°${i+1} ${JSON.stringify(opt.subdivisions)}`)
     .build(
       opt.hauteur - 2 * (opt.epaisseur_montants - m.longueur_tenon),
       opt.largeur_montants,
@@ -187,7 +315,7 @@
     .usine_tenons(m.longueur_tenon)
     .put(
       opt.epaisseur_montants
-        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0),
+        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
       opt.epaisseur_montants - m.longueur_tenon,
       null,
@@ -202,16 +330,14 @@
     .put(null, null, 0)))
 
   $: traverses_inter = opt.montants_inter.map((m, i) => (new Piece()
-    .add_name("Traverse", "intermédiaire", `n°${i+1}`)
+    .add_name("Traverse", "intermédiaire", `n°${i+1} ${JSON.stringify(m.xpos)}`)
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
       opt.epaisseur_montants)
     .usine_tenons(opt.profondeur_tenons_cotes)
     .put(
-      opt.epaisseur_montants
-        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0),
-        + i * opt.epaisseur_montants,
+      m.xpos,
       null,
       opt.largeur_montants - opt.profondeur_tenons_cotes,
       'zyx')))
@@ -233,12 +359,14 @@
                      + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
       opt.epaisseur_panneau)
     .put(
-      opt.epaisseur_montants + opt.subdivisions[i].largeur,
+      opt.epaisseur_montants
+        + opt.subdivisions.splice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
+        + i * opt.epaisseur_montants,
       opt.epaisseur_montants + opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure,
       opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
       'yzx')))
 
-  $: pieces2 = [
+  $: pieces = [
     montant_ar_g, montant_av_g, montant_ar_d, montant_av_d,
     traverse_cote_b_d, traverse_cote_b_g, traverse_cote_h_d, traverse_cote_h_g,
     panneau_cote_g, panneau_cote_d,
@@ -252,179 +380,33 @@
     .concat(traverses_inter_h)
     .concat(traverses_inter_b)
 
-  $: pieces = [
-      {
-        nom: 'Montant',
-        que: 4,
-        piece: montants
-      },
-      {
-        nom: 'Traverse simples',
-        que: 4,
-        piece: traverses
-      },
-      {
-        nom: 'Traverse coté',
-        que: 4,
-        piece: traverses_cote
-      },
-      {
-        nom: 'Panneaux coté',
-        que: 2,
-        piece: panneaux_cote
-      },
-      {
-        nom: 'Panneaux dessus/dessous',
-        que: 2,
-        piece: panneaux_haut_bas
-      },
-    ].concat(panneaux_dos.map((p, i) => (
-      {
-        nom: `Panneau dos n°${i+1}`,
-        que: 1,
-        piece: p,
-      }
-    ))).concat(montants_inter.map((m, i) => (
-      {
-        nom: `Montant intermédiaire face/dos n°${i+1}`,
-        que: 2,
-        piece: m,
-      }
-    ))).concat(traverses_inter.map((t, i) => (
-      {
-        nom: `Traverse intermédiaire dessus/dessous n°${i+1}`,
-        que: 2,
-        piece: t,
-      }
-    ))).concat(panneaux_inter.map((p, i) => (
-      {
-        nom: `Panneau intermédiaire n°${i+1}`,
-        que: 1,
-        piece: p,
-      }
-    )))
-
-    $: {
-      updateSubdivisions(opt)
-      calculPortes(opt.portes, opt)
-    }
-
-    function calculLargeurSubdivisions(fixe){
-      fixe = fixe || []
-      let subdivisions = opt.subdivisions.filter((s, i) => (i < opt.divisions))
-      let espace_a_repartir = opt.largeur - (opt.divisions+1) * opt.epaisseur_montants
-
-      let espace_defini = subdivisions
-        .map((s) => (s.largeur))
-        .reduce((a,b) => (a+b), 0)
-      console.log("calculLargeurSubdivisions(%o) defini = %o, a_repartir = %o", fixe, espace_defini, espace_a_repartir)
-      if(espace_defini == espace_a_repartir) return;
-
-      let subdivision_fixes = subdivisions.filter((s, i) => (fixe.includes(i)))
-      if (subdivision_fixes.length >= opt.divisions)
-        subdivision_fixes = []
-
-      espace_a_repartir = espace_a_repartir - subdivision_fixes
-        .map((s) => (s.largeur))
-        .reduce((a,b) => (a+b), 0)
-
-      let espace_reparti = Math.floor(espace_a_repartir / (opt.divisions - subdivision_fixes.length))
-
-      for(let i = 0; i<opt.divisions; i++) {
-        if(fixe.includes(i)) continue;
-        espace_a_repartir = espace_a_repartir - espace_reparti
-        if (espace_a_repartir < espace_reparti) {
-          subdivisions[i].largeur = espace_reparti + espace_a_repartir
-        } else {
-          subdivisions[i].largeur = espace_reparti
-        }
-      }
-    }
-
-    function onChangeLargeurSubdivision(e){
-      let i = parseInt(e.target.dataset.idx)
-      console.log('onChangeLargeurSubdivision(i=%d)', i)
-      opt.subdivisions[i].largeur = parseInt(e.target.value)
-      if(i == opt.divisions - 1)
-        return calculLargeurSubdivisions(Array.from(new Array(i+1).keys()).slice(1))
-      else
-        return calculLargeurSubdivisions(Array.from(new Array(i+1).keys()))
-    }
-
-    function updateSubdivisions(opt){
-      opt.portes         = opt.portes.slice(0, opt.divisions)
-      opt.subdivisions   = opt.subdivisions.slice(0, opt.divisions)
-      opt.montants_inter = opt.montants_inter.slice(0, opt.divisions-1)
-
-      for(let i = 0; i<opt.divisions; i++) {
-        opt.portes[i] = {
-          type: 'aucune',
-          ...opt.portes[i],
-        }
-        opt.subdivisions[i] = {
-          ...opt.subdivisions[i],
-        }
-      }
-      for(let i = 0; i<opt.divisions - 1; i++) {
-        opt.montants_inter[i] = {
-          longueur_tenon: 20,
-          ...opt.montants_inter[i],
-        }
-      }
-
-      let subdivisions_fixes = opt.subdivisions
-        .map((s, i) => s.largeur ? i : null)
-        .filter((i) => i !== null)
-      if(subdivisions_fixes.length < opt.subdivisions.length)
-        calculLargeurSubdivisions(subdivisions_fixes)
-    }
-
-    function calculPortes(portes, opt){
-      console.log(`Caisson(${path}) Recalcul des portes %o %o`, portes, opt)
-      if(!data.children) data.children = []
-      for(let i = 0; i<Math.max(portes.length, opt.divisions); i++) {
-        let porte = portes[i]
-        if(i >= opt.divisions || !porte || porte.type == 'aucune'){
-          data.children[i] = {
-            ...data.children[i],
-            type: null,
-          }
-        } else {
-          data.children[i] = {
-            ...data.children[i],
-            type: 'Porte',
-            name: `${i+1}`,
-            id:   i,
-            forceopt: {
-              largeur:
-                (porte.type == 'total') ? opt.largeur :
-                (porte.type == 'demi')  ? opt.largeur - opt.epaisseur_montants :
-                0,
-              hauteur:
-                (porte.type == 'total') ? opt.hauteur :
-                (porte.type == 'demi')  ? opt.hauteur - opt.epaisseur_montants :
-                0,
-            },
-          }
-        }
-      }
-    }
-
-    function addPorteRecouvrementTotal(){
-      let name = "Porte recouvrement total"
-      if(!data.children) data.children = []
-      let id = data.children.length
-      data.children = [...data.children, {
-        type: 'Porte',
-        name: name,
-        id:   id,
-        opt: {
-          largeur: opt.largeur,
-          hauteur: opt.hauteur,
-        }
-      }]
-    }
+    let hello = {words: ['hello', 'world']};
 </script>
+
+<h1>{JSON.stringify(hello)}</h1>
+
+{#each hello.words as n, i}
+<p>
+  {i}: <input type="text" bind:value={n} />
+</p>
+{/each}
+{JSON.stringify(opt.subdivisions)}
+    <p>
+      Répartition en largeur :
+      {#each opt.subdivisions as subdivision, i}
+      {#if i < opt.divisions}
+      <input type=number min=0 style="width: 5em"
+        data-idx={i} bind:value={subdivision.largeur}
+        />
+      {/if}
+      {/each}
+      mm
+      (largeur totale:
+      {(opt.divisions+1)*opt.epaisseur_montants+opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)})
+      {(opt.divisions+1)*opt.epaisseur_montants}
+      {JSON.stringify(opt.subdivisions)}
+      {opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)}
+    </p>
 
 <style>
   form > label {
@@ -558,17 +540,17 @@
         width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
         height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
       <g transform="translate(5, 5) scale({zoom} {zoom})">
-        {#each pieces2 as piece}
+        {#each pieces as piece}
           <SVGPiece piece={piece} pos="xy" />
         {/each}
       </g>
       <g transform="translate({5 + zoom*opt.largeur + 10}, 5) scale({zoom} {zoom})">
-        {#each pieces2 as piece}
+        {#each pieces as piece}
           <SVGPiece piece={piece} pos="zy" />
         {/each}
       </g>
       <g transform="translate(5, {5 + zoom*(opt.hauteur) + 5}) scale({zoom} {zoom})">
-        {#each pieces2 as piece}
+        {#each pieces as piece}
           <SVGPiece piece={piece} pos="xz" />
         {/each}
       </g>
@@ -579,7 +561,7 @@
     <label><span>Hauteur    : </span><input type=number bind:value={opt.hauteur} min=0/> mm </label>
     <label><span>Largeur    : </span><input type=number bind:value={opt.largeur} min=0/> mm</label>
     <label><span>Profondeur : </span><input type=number bind:value={opt.profondeur} min=0/> mm </label>
-    <label><span>Divisions  : </span><input type=number bind:value={opt.divisions} min=1/></label>
+    <label><span>Divisions  : </span><input type=number bind:value={divisions} min=1/></label>
 
     {#if opt.divisions > 1}
     <p>
@@ -588,11 +570,15 @@
       {#if i < opt.divisions}
       <input type=number min=0 style="width: 5em"
         data-idx={i} bind:value={subdivision.largeur}
-        on:change={onChangeLargeurSubdivision}
         />
       {/if}
       {/each}
       mm
+      (largeur totale:
+      {(opt.divisions+1)*opt.epaisseur_montants+opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)})
+      {(opt.divisions+1)*opt.epaisseur_montants}
+      {JSON.stringify(opt.subdivisions)}
+      {opt.subdivisions.map(s => s.largeur).reduce((a,b)=>(a+b), 0)}
     </p>
     {/if}
 
@@ -651,7 +637,6 @@
     </form>
 
     <hr class="clear"/>
-    <ListeDebit pieces={pieces2} />
-    <ListeDebit pieces={pieces} merge={false} />
+    <ListeDebit pieces={pieces} />
   </div>
 </Component>
