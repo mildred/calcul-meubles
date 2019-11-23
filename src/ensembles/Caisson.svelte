@@ -3,6 +3,7 @@
   import Piece from '../pieces/piece.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
   import ListeDebit from '../ListeDebit.svelte'
+  import InputCheckbox from '../controls/InputCheckbox.svelte';
 
   export let path
   export let initdata = {}
@@ -315,10 +316,6 @@
           + i * opt.epaisseur_montants,
         opt.epaisseur_montants * (j+1) - opt.profondeur_rainure + opt.jeu_rainure
           + col.casiers.slice(0, j).reduce((n, c) => n + c.hauteur, 0),
-        //opt.hauteur
-        //  - opt.epaisseur_montants * (j+1)
-        //  - col.casiers.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
-        //  - (opt.profondeur_rainure - opt.jeu_rainure),
         0, 'yxz')))))
 
   $: montants_inter = opt.montants_inter.map((m, i) => (new Piece()
@@ -344,23 +341,37 @@
     .add_name("arrière")
     .put(null, null, 0)))
 
-  $: hauteurs_caisson_montants = Array(opt.colonnes.length + 1).map((i) => {
-    let caissons_g = (opt.colonnes[i-1] || {}).caissons || []
-    let caissons_d = (opt.colonnes[i]   || {}).caissons || []
-    let hauteurs_g = caissons_g.map((caisson, j) => (
+  $: hauteurs_caisson_montants = Array.from(Array(opt.colonnes.length + 1).keys()).map((i) => {
+    let casiers_g = (opt.colonnes[i-1] || {}).casiers || []
+    let casiers_d = (opt.colonnes[i]   || {}).casiers || []
+    let hauteurs_g = casiers_g.slice(0, -1).map((caisson, j) => (
       opt.epaisseur_montants * (j+1)
-        + caissons_g.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0) ))
-    let hauteurs_d = caissons_g.map((caisson, j) => (
+        + casiers_g.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0) ))
+    let hauteurs_d = casiers_d.slice(0, -1).map((caisson, j) => (
       opt.epaisseur_montants * (j+1)
-        + caissons_d.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0) ))
+        + casiers_d.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0) ))
+    //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
+    //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i}] =`, opt.colonnes[i])
+    //console.log(`hauteurs_caisson_montants[${i}] hauteurs_g =`, hauteurs_g)
+    //console.log(`hauteurs_caisson_montants[${i}] hauteurs_d =`, hauteurs_d)
     let hauteurs = hauteurs_g.concat(hauteurs_d).sort()
       .map(ypos => [ypos, ypos + opt.epaisseur_montants])
       .reduce((hh, h1) => (
-        (h1[1] - hh[hh.length-1][0] <= opt.largeur_traverses) ?
+        (hh.length > 0 && h1[1] - hh[hh.length-1][0] <= opt.largeur_traverses) ?
           ((hh[hh.length-1][1] = h1[1]), hh) :
           hh.concat([h1])
       ), [])
     return hauteurs;
+  })
+
+  $: hauteurs_panneaux_montants = hauteurs_caisson_montants.map((hh, i) => {
+    //console.log(`hauteurs_panneaux_montants[${i}] hh =`, hh)
+    return Array.from(Array(hh.length + 1).keys()).map(j => (
+      (j == 0 && j >= hh.length) ? [ opt.largeur_traverses, opt.hauteur - opt.largeur_traverses ] :
+      (j == 0)                   ? [ opt.largeur_traverses, hh[j][0] ] :
+      (j < hh.length)            ? [ hh[j-1][1], hh[j][0] ] :
+                                   [ hh[j-1][1], opt.hauteur - opt.largeur_traverses ]
+    ))
   })
 
   $: traverses_cote_inter_caissons =
@@ -377,13 +388,8 @@
       ))
     ))
 
-  $: panneaux_cote = hauteurs_caisson_montants.map((hh, i) => (
-    Array.from(Array(hh.length + 1).keys()).map(j => (
-      (j == 0)        ? [ opt.largeur_traverses, hh[j][0] ] :
-      (j < hh.length) ? [ hh[j-1][1], hh[j][0] ] :
-                        [ hh[j-1][1], opt.hauteur - opt.largeur_traverses ]
-    ))
-    .map((panneau, j) => (
+  $: panneaux_cote = hauteurs_panneaux_montants.map((hh, i) => (
+    hh.map((panneau, j) => (
       new Piece()
       .add_name("Panneau",
         (i > 0 && i < opt.colonnes.length) ? "coté" : undefined,
@@ -395,8 +401,8 @@
         opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
         opt.epaisseur_panneau)
       .put(
-        opt.epaisseur_montants * (i+1)
-          + opt.colonnes.slice(0, i+1).reduce((n, c) => n+c.largeur, 0),
+        opt.epaisseur_montants * (i)
+          + opt.colonnes.slice(0, i).reduce((n, c) => n+c.largeur, 0),
         panneau[0] - opt.profondeur_rainure + opt.jeu_rainure,
         opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
         'yzx')
@@ -427,21 +433,6 @@
     .add_name("bas")
     .put(null, opt.hauteur - opt.epaisseur_montants - t.largeur)))
 
-  $: panneaux_inter = opt.montants_inter.map((m, i) => (new Piece()
-    .add_name("Panneau", "intermédiaire", `cloison n°${i+1}`)
-    .build(
-      opt.hauteur - 2 * (opt.epaisseur_montants + opt.largeur_traverses)
-                  + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
-      opt.profondeur - 2 * (opt.largeur_montants)
-                     + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
-      opt.epaisseur_panneau)
-    .put(
-      opt.epaisseur_montants * (i+1)
-        + opt.colonnes.slice(0, i+1).reduce((n, c) => n+c.largeur, 0),
-      opt.epaisseur_montants + opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure,
-      opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
-      'yzx')))
-
   $: traverses_inter2_av_ar = opt.colonnes.map((col, i) => (
     col.casiers.map((caisson, j) => (j == 0) ? null : (
       new Piece()
@@ -454,9 +445,6 @@
             - opt.profondeur_tenons,
           opt.epaisseur_montants * j
             + col.casiers.slice(0, j).reduce((n, c) => n + c.hauteur, 0),
-          //opt.hauteur
-          //  - opt.epaisseur_montants * (j+1)
-          //  - col.casiers.slice(0, j).map(x => x.hauteur).reduce((a, b) => a+b, 0),
           null,
           'xzy')
     ))
@@ -476,45 +464,6 @@
     ))
   ))
 
-  //$: traverses_inter2_g_d = opt.colonnes.map((col, i) => (
-  //  col.casiers.map((caisson, j) => (j == 0) ? null : (traverse_inter
-  //    .add_name(`cloison n°${i+1}`, `caisson n°${j}`)
-  //    .put(null, j * opt.epaisseur_montants
-  //      + col.casiers.slice(0, j).map(x => x.hauteur).reduce((a, b) => a+b, 0)
-  //      - (opt.largeur_traverses - opt.epaisseur_montants) / 2)
-  //  ))
-  //))
-
-  //$: traverses_inter2_g = traverses_inter2_g_d.map((col, i) => (
-  //  col.map((tr, j) => (tr == null) ? null : (tr
-  //    .add_name("gauche", `cloison n°${i+1}`, `caisson n°${j}`)
-  //    .put(
-  //      i * opt.epaisseur_montants
-  //        + opt.colonnes.slice(0, i).reduce((n, c) => n + c.largeur, 0))
-  //  ))
-  //))
-
-  //$: traverses_inter2_d = traverses_inter2_g_d.map((col, i) => (
-  //  col.map((tr, j) => (tr == null) ? null : (tr
-  //    .add_name("droite", `cloison n°${i+1}`, `caisson n°${j}`)
-  //    .put(
-  //      (i+1) * opt.epaisseur_montants
-  //        + opt.colonnes.slice(0, i+1).reduce((n, c) => n + c.largeur, 0))
-  //  ))
-  //))
-
-  //$: traverses_inter2_d_filtre = traverses_inter2_d.map((col, i) => (
-  //  col.map((tr, j) => {
-  //    if(tr == null) return null;
-  //    let traverses_col_droite = traverses_inter2_g[i+1] || []
-  //    let ymin = tr.y + (opt.largeur_traverses - opt.epaisseur_montants) / 2
-  //    let ymax = ymin + opt.epaisseur_montants
-  //    let traverse_identique = traverses_col_droite.find(tr2 => (
-  //      tr2 && tr2.y <= ymin && tr2.y+tr2.largeur >= ymax))
-  //    return (traverse_identique) ? null : tr
-  //  })
-  //))
-
 
   $: pieces = [
     montant_ar_g, montant_av_g, montant_ar_d, montant_av_d,
@@ -524,7 +473,6 @@
   ]
     .concat(panneaux_dos.reduce((a,b) => a.concat(b), []))
     .concat(panneaux_cote.reduce((a,b) => a.concat(b), []))
-    .concat(panneaux_inter)
     .concat(montants_inter_ar)
     .concat(montants_inter_av)
     .concat(traverses_inter_h)
@@ -551,6 +499,16 @@
   }
   td {
     vertical-align: top;
+  }
+  table.panneaux .center {
+    text-align: center
+  }
+  table.panneaux .vertical {
+    //transform: rotate(-90deg);
+    //transform-origin: left;
+    //text-orientation: mixed;
+    writing-mode: sideways-lr;
+    min-width: 1em;
   }
 </style>
 
@@ -641,6 +599,68 @@
     {#if largeur_colonnes.filter(x => (x && x != 0)).length == largeur_colonnes.length}
     <p>Attention : trop de largeurs sont définies en même temps</p>
     {/if}
+
+    <hr/>
+
+    <table class="panneaux" style="display: none">
+      <caption>Panneaux</caption>
+      <tr>
+          <th>Coté gauche</th>
+          {#each opt.colonnes as colonne, i}
+            <th>Colonne n°{i+1}</th>
+            {#if i < opt.colonnes.length - 1}
+              <th>Montant n°{i+1}</th>
+            {/if}
+          {/each}
+          <th>Coté droit</th>
+      </tr>
+      <tr>
+        <td colspan={1+opt.colonnes.length*2}>
+          <label><InputCheckbox checked={true} /> dessus</label>
+          <hr/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          {#each ((opt.colonnes[0] || {}).casiers || []) as casier, j}
+            {#if j > 0}<hr/>{/if}
+            <label><InputCheckbox checked={true} /> coté n°{j+1}</label>
+          {/each}
+        </td>
+        {#each opt.colonnes as colonne, i}
+          <td>
+            {#each colonne.casiers as casier, j}
+              {#if j > 0}<hr/>{/if}
+              <label><InputCheckbox checked={true} /> dos casier n°{j+1}</label>
+              {#if j < colonne.casiers.length - 1}
+              <br/>
+              <label><InputCheckbox checked={true} /> dessous casier n°{j+1}</label>
+              {/if}
+            {/each}
+          </td>
+          {#if i < opt.colonnes.length - 1}
+            <td>
+            {#each (hauteurs_panneaux_montants[i+1] || []) as _panneau, j}
+              {#if j > 0}<hr/>{/if}
+              <label><InputCheckbox checked={true} /> coté n°{j+1}</label>
+            {/each}
+            </td>
+          {/if}
+        {/each}
+        <td>
+          {#each ((opt.colonnes[opt.colonnes.length-1] || {}).casiers || []) as casier, j}
+            {#if j > 0}<hr/>{/if}
+            <label><InputCheckbox checked={true} /> coté n°{j+1}</label>
+          {/each}
+        </td>
+      </tr>
+      <tr>
+        <td colspan={1+opt.colonnes.length*2}>
+          <hr/>
+          <label><InputCheckbox checked={true} /> dessous</label>
+        </td>
+      </tr>
+    </table>
 
     <hr/>
 

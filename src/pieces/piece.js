@@ -55,14 +55,14 @@ export default class Piece {
   set_name() {
     return this.update_new({
       ...this,
-      names: Array.from(arguments),
+      names: Array.from(arguments).filter(x => x),
     })
   }
 
   add_name() {
     return this.update_new({
       ...this,
-      names: this.names.concat(Array.from(arguments)),
+      names: this.names.concat(Array.from(arguments).filter(x => x)),
     })
   }
 
