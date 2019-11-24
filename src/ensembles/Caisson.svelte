@@ -1,4 +1,5 @@
 <script>
+  import { cleanObject } from '../utils.js';
   import Component from '../Component.svelte';
   import Piece from '../pieces/piece.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
@@ -10,7 +11,7 @@
 
   let data = {...initdata}
 
-  let opt = {
+  let defaults = {
     type:  'contre-profil',
     largeur: 400,
     hauteur: 600,
@@ -37,6 +38,7 @@
     ],
     colonnes: [
       {
+        porte: {},
         casiers: [
           {
             panneau_dessous: true,
@@ -45,8 +47,15 @@
         ],
       },
     ],
-    ...data.opt
+    ...initdata.defaults
   }
+
+  let opt = { ...defaults, ...initdata.opt }
+  let ui  = { ...(initdata.ui || initdata.opt) }
+
+  $: opt      = {...opt, ...cleanObject(ui)}
+  $: data.opt = opt
+  $: data.ui  = ui
 
   // Migrate
   if (opt.profondeur_tenons_intermediaire) {
@@ -79,8 +88,10 @@
   function updateSubdivisions(num_colonnes){
     opt.colonnes             = opt.colonnes.slice(0, num_colonnes)
     opt.montants_inter       = opt.montants_inter.slice(0, num_colonnes-1)
-    let dernier_montant      = opt.montants.pop()
-    opt.montants             = opt.montants.slice(0, num_colonnes).concat([dernier_montant])
+    let dernier_montant      = opt.montants[opt.montants.length-1]
+    opt.montants             = opt.montants.slice(0, opt.montants.length-1)
+                                           .slice(0, num_colonnes)
+                                           .concat([dernier_montant])
     largeur_colonnes         = largeur_colonnes.slice(0, num_colonnes)
     num_casiers_colonnes     = num_casiers_colonnes.slice(0, num_colonnes)
     hauteur_casiers_colonnes = hauteur_casiers_colonnes.slice(0, num_colonnes)

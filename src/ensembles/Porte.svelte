@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { cleanObject } from '../utils.js';
   import InputNumber from '../controls/InputNumber.svelte';
   import InputCheckbox from '../controls/InputCheckbox.svelte';
   import Component from '../Component.svelte';
@@ -30,19 +31,13 @@
   }
 
   let opt = { ...initdata.opt }
-  let ui  = { ...initdata.ui }
+  let ui  = { ...(initdata.ui || initdata.opt) }
 
   $: opt      = {...defaults, ...cleanObject(ui)}
   $: data.opt = opt
   $: data.ui  = ui
 
   let zoom = 0.5
-
-  function cleanObject(src){
-    return Object.keys(src)
-      .filter(k => (src[k] != null))
-      .reduce((m, k) => (m[k] = src[k], m), {})
-  }
 
   $: montant = new Piece()
     .add_name("Montant")
