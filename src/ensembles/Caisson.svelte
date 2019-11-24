@@ -1,15 +1,20 @@
 <script>
-  import { cleanObject } from '../utils.js';
+  import { cleanObject, pipeline } from '../utils.js';
   import Component from '../Component.svelte';
   import Piece from '../pieces/piece.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
   import ListeDebit from '../ListeDebit.svelte'
   import InputCheckbox from '../controls/InputCheckbox.svelte';
+  import InputNumber from '../controls/InputNumber.svelte';
 
   export let path
   export let initdata = {}
 
   let data = {...initdata}
+
+  //
+  // Defaults
+  //
 
   let defaults = {
     type:  'contre-profil',
@@ -50,12 +55,11 @@
     ...initdata.defaults
   }
 
-  let opt = { ...defaults, ...initdata.opt }
-  let ui  = { ...(initdata.ui || initdata.opt) }
+  //
+  // Option (internal state)
+  //
 
-  $: opt      = {...opt, ...cleanObject(ui)}
-  $: data.opt = opt
-  $: data.ui  = ui
+  let opt = { ...defaults, ...initdata.opt }
 
   // Migrate
   if (opt.profondeur_tenons_intermediaire) {
@@ -64,48 +68,90 @@
     delete opt.profondeur_tenons_intermediaire
   }
   if (opt.hauteur_traverses) {
-    opt.largeur_traverses = opt.hauteur_traverses
+    opt.largeur_traverses = opt.hauteur_traverse
     delete opt.hauteur_traverses
   }
 
-  let selection_casier = '0,0'
-  let zoom = 0.5;
-  let num_colonnes = Math.max(opt.colonnes.length, 1)
-  let largeur_colonnes = opt.colonnes.map(c => (c.largeur_definie ? c.largeur : null))
-  let num_casiers_colonnes = opt.colonnes.map(c => (c.casiers || [{}]).length)
-  let hauteur_casiers_colonnes = opt.colonnes.map(c => (c.casiers || []).map(cas => cas.hauteur_definie ? cas.hauteur : null))
-  let montants = opt.montants
+  //
+  // UI (visible state)
+  //
 
+  let ui  = {
+    ...(initdata.ui || initdata.opt),
+  }
+
+  let zoom = 0.5
+  let num_colonnes = Math.max(opt.colonnes.length, 1)
+
+  let largeur_colonnes = opt.colonnes.map(c => (c.largeur_definie ? c.largeur : null))
+  $: largeur_colonnes = Array.from(Array(num_colonnes).keys())
+    .map(i => largeur_colonnes[i] || null)
+
+  let num_casiers_colonnes = opt.colonnes.map(c => (c.casiers || [{}]).length)
+  $: num_casiers_colonnes = Array.from(Array(num_colonnes).keys())
+    .map(i => num_casiers_colonnes[i] || 1)
+
+  let hauteur_casiers_colonnes = opt.colonnes.map(c => (c.casiers || []).map(cas => cas.hauteur_definie ? cas.hauteur : null))
+  $: hauteur_casiers_colonnes = Array.from(Array(num_colonnes).keys())
+    .map(i => (hauteur_casiers_colonnes[i] || []).slice(0, num_casiers_colonnes[i]))
+
+  let montants = opt.montants
+  $: montants = pipeline(
+    montants.slice(0, montants.length - 1),
+    m => Array(num_colonnes).fill(1).map((_, i) => m[i] || {panneaux:[true]}),
+    m => m.concat([montants[montants.length-1]]))
+
+  let selection_casier = '0,0'
   $: [selection_casier_i, selection_casier_j] = selection_casier.split(',').map(n => parseInt(n))
 
-  $: updateSubdivisions(num_colonnes)
-  $: calculLargeurs(largeur_colonnes)
-  $: calculPortes(opt)
-  $: calculNumCasiers(num_casiers_colonnes, hauteur_casiers_colonnes)
+  //
+  // Update opt from ui
+  //
 
-  $: data.opt = opt
+  $: opt = pipeline(
+    {
+      ...defaults,
+      ...cleanObject({
+        ...ui,
+      }),
+    },
+    opt => updateSubdivisions(num_colonnes, opt),
+    opt => calculLargeurColonnes(largeur_colonnes, opt),
+    opt => calculCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, opt))
 
-  function updateSubdivisions(num_colonnes){
-    opt.colonnes             = opt.colonnes.slice(0, num_colonnes)
-    opt.montants_inter       = opt.montants_inter.slice(0, num_colonnes-1)
-    let dernier_montant      = opt.montants[opt.montants.length-1]
-    opt.montants             = opt.montants.slice(0, opt.montants.length-1)
-                                           .slice(0, num_colonnes)
-                                           .concat([dernier_montant])
-    largeur_colonnes         = largeur_colonnes.slice(0, num_colonnes)
-    num_casiers_colonnes     = num_casiers_colonnes.slice(0, num_colonnes)
-    hauteur_casiers_colonnes = hauteur_casiers_colonnes.slice(0, num_colonnes)
+  //
+  // Update data from opt
+  //
+
+  $: data = pipeline(
+    {
+      ...data,
+      opt: opt,
+      ui: ui
+    },
+    data => calculPortes(opt, data))
+
+  //
+  // Fonctions de calcul
+  //
+
+  function updateSubdivisions(num_colonnes, opt){
+    let opt2 = {...opt}
+    opt2.colonnes            = opt.colonnes.slice(0, num_colonnes)
+    opt2.montants_inter      = opt.montants_inter.slice(0, num_colonnes-1)
+    opt2.montants            = pipeline(
+      opt.montants.slice(0, opt.montants.length-1),
+      m => Array(num_colonnes).fill(1).map((_, i) => m[i]),
+      m => m.concat([opt.montants[opt.montants.length-1]]))
 
     for(let i = 0; i<=num_colonnes; i++) {
-      opt.montants[i] = {
+      opt2.montants[i] = {
         panneaux: [true],
-        ...opt.montants[i],
+        ...opt2.montants[i],
       }
       if (i >= num_colonnes) break;
 
-      largeur_colonnes[i] = largeur_colonnes[i] || null
-      num_casiers_colonnes[i] = num_casiers_colonnes[i] || 1
-      opt.colonnes[i] = {
+      opt2.colonnes[i] = {
         largeur: null,
         num_casiers: 1,
         casiers: [
@@ -115,18 +161,20 @@
           }
         ],
         porte: {},
-        ...opt.colonnes[i],
+        ...opt2.colonnes[i],
       }
       if (i<num_colonnes - 1) {
-        opt.montants_inter[i] = {
+        opt2.montants_inter[i] = {
           longueur_tenon: 20,
-          ...opt.montants_inter[i],
+          ...opt2.montants_inter[i],
         }
       }
     }
+    return opt2
   }
 
-  function calculLargeurs(largeurs){
+
+  function calculLargeurColonnes(largeurs, opt){
     let cols = opt.colonnes.length
     let espace_a_repartir = opt.largeur - (cols+1) * opt.epaisseur_montants
     let largeurs_definies = largeurs.filter(x => (x && x != 0))
@@ -134,35 +182,46 @@
     let espace_reparti = largeurs_definies.reduce((a,b) => (a+b), 0)
     let espace_restant = espace_a_repartir - espace_reparti
     let espace_par_col = Math.floor(espace_restant / cols_a_calculer)
+    let colonnes = [...opt.colonnes]
 
     for(let i = 0; i < cols; i++) {
       if(largeurs[i] && largeurs[i] != 0) {
-        opt.colonnes[i].largeur_definie = true
-        opt.colonnes[i].largeur = largeurs[i]
+        colonnes[i].largeur_definie = true
+        colonnes[i].largeur = largeurs[i]
       } else if(cols_a_calculer == 1) {
-        opt.colonnes[i].largeur_definie = false
-        opt.colonnes[i].largeur = espace_restant
+        colonnes[i].largeur_definie = false
+        colonnes[i].largeur = espace_restant
         cols_a_calculer = 0
         espace_restant = 0
       } else {
-        opt.colonnes[i].largeur_definie = false
-        opt.colonnes[i].largeur = espace_par_col
+        colonnes[i].largeur_definie = false
+        colonnes[i].largeur = espace_par_col
         espace_restant -= espace_par_col
         cols_a_calculer -= 1
       }
     }
+
+    return {
+      ...opt,
+      colonnes: colonnes,
+    }
   }
 
-  function calculNumCasiers(num_casiers_colonnes, hauteur_casiers_colonnes){
+  function calculCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, opt){
     let cols = opt.colonnes.length
+    let colonnes = []
+
     for(let i = 0; i < cols; i++) {
-      let col = opt.colonnes[i]
       let num = num_casiers_colonnes[i]
+      colonnes[i] = pipeline(
+        opt.colonnes[i] || {},
+        col => {col.casiers = (col.casiers || []).slice(0, num); return col},
+        col => calculHauteurs(col, hauteur_casiers_colonnes[i], num))
+    }
 
-      opt.colonnes[i].casiers = (col.casiers || []).slice(0, num)
-      hauteur_casiers_colonnes[i] = (hauteur_casiers_colonnes[i] || []).slice(0, num)
-
-      opt.colonnes[i] = calculHauteurs(opt.colonnes[i], hauteur_casiers_colonnes[i], num)
+    return {
+      ...opt,
+      colonnes: colonnes,
     }
   }
 
@@ -201,19 +260,19 @@
     return colonne
   }
 
-  function calculPortes(opt){
+  function calculPortes(opt, data){
     //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
-    if(!data.children) data.children = []
+    let children = [...data.children]
     for(let i = 0; i < opt.colonnes.length; i++) {
       let porte = opt.colonnes[i].porte || {}
       if(!porte || porte.type == 'aucune'){
-        data.children[i] = {
-          ...data.children[i],
+        children[i] = {
+          ...children[i],
           type: null,
         }
       } else {
-        data.children[i] = {
-          ...data.children[i],
+        children[i] = {
+          ...children[i],
           type: 'Porte',
           name: `${i+1}`,
           id:   i,
@@ -253,30 +312,38 @@
         }
       }
     }
+    return {
+      ...data,
+      children: children,
+    }
   }
 
-  $: montants = new Piece()
+  //
+  // Pièces
+  //
+
+  $: montants_template = new Piece()
     .add_name("Montant")
     .build(
       opt.hauteur,
       opt.largeur_montants,
       opt.epaisseur_montants)
 
-  $: montant_ar_g = montants
+  $: montant_ar_g = montants_template
     .add_name("arrière-gauche")
     .put(0, 0, 0, 'yzx')
 
-  $: montant_av_g = montants
+  $: montant_av_g = montants_template
     .add_name("avant-gauche")
-    .put(opt.largeur - montants.epaisseur, 0, opt.profondeur - montants.largeur, 'yzx')
+    .put(opt.largeur - montants_template.epaisseur, 0, opt.profondeur - montants_template.largeur, 'yzx')
 
-  $: montant_ar_d = montants
+  $: montant_ar_d = montants_template
     .add_name("arrière-droit")
-    .put(opt.largeur - montants.epaisseur, 0, 0, 'yzx')
+    .put(opt.largeur - montants_template.epaisseur, 0, 0, 'yzx')
 
-  $: montant_av_d = montants
+  $: montant_av_d = montants_template
     .add_name("avant-droit")
-    .put(0, 0, opt.profondeur - montants.largeur, 'yzx')
+    .put(0, 0, opt.profondeur - montants_template.largeur, 'yzx')
 
   $: traverses_cote = new Piece()
     .add_name("Traverse", "coté")
@@ -671,9 +738,9 @@
     </div>
 
     <form style="float: left">
-    <label><span>Hauteur    : </span><input type=number bind:value={opt.hauteur} min=0/> mm </label>
-    <label><span>Largeur    : </span><input type=number bind:value={opt.largeur} min=0/> mm</label>
-    <label><span>Profondeur : </span><input type=number bind:value={opt.profondeur} min=0/> mm </label>
+    <label><span>Hauteur    : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} /> mm </label>
+    <label><span>Largeur    : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur}/> mm</label>
+    <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.profondeur} def={defaults.profondeur}/> mm </label>
     <label><span>Colonnes   : </span><input type=number bind:value={num_colonnes} min=1/></label>
 
     <table>
@@ -779,6 +846,7 @@
               <label><InputCheckbox
                 tristate={false}
                 def={opt.montants[selection_casier_i].panneaux[k]}
+                bind:checked={montants[selection_casier_i].panneaux[k]}
                 /> panneau gauche (n°{k+1})</label>
             {/if}
           {/each}
@@ -787,6 +855,7 @@
               <label><InputCheckbox
                 tristate={false}
                 def={opt.montants[selection_casier_i+1].panneaux[k]}
+                bind:checked={montants[selection_casier_i+1].panneaux[k]}
                 /> panneau droite (n°{k+1})</label>
             {/if}
           {/each}
