@@ -262,7 +262,7 @@
 
   function calculPortes(opt, data){
     //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
-    let children = [...data.children]
+    let children = [...(data.children || [])]
     for(let i = 0; i < opt.colonnes.length; i++) {
       let porte = opt.colonnes[i].porte || {}
       if(!porte || porte.type == 'aucune'){
