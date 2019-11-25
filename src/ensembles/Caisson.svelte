@@ -701,6 +701,15 @@
     .filter(x => x)
 
   $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
+  $: nombre_pieces = pieces.length
+  $: pieces_par_epaisseur = pieces
+    .reduce((h, p) => ({...h, [p.epaisseur]: [...(h[p.epaisseur]||[]), p]}), {})
+  $: stats_epaisseur = Object.keys(pieces_par_epaisseur)
+    .map((epaisseur) => ({
+      epaisseur: epaisseur,
+      nombre: pieces_par_epaisseur[epaisseur].length,
+      surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.surface(), 0)
+    }))
 </script>
 
 <style>
@@ -1003,6 +1012,14 @@
     <dl>
       <dt>Nombre de tenons</dt>
       <dd>{nombre_tenons}</dd>
+      <dt>Nombre de pièces</dt>
+      <dd>{nombre_pieces}</dd>
+      {#each stats_epaisseur as p}
+      <dt>Nombre de pièces e={p.epaisseur}</dt>
+      <dd>{p.nombre}</dd>
+      <dt>Surface des pièces e={p.epaisseur}</dt>
+      <dd>{p.surface}</dd>
+      {/each}
     </dl>
     <ListeDebit pieces={pieces} />
   </div>

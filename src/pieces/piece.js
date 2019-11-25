@@ -230,6 +230,10 @@ export default class Piece {
     return `${this.longueur} x ${this.largeur} x ${this.epaisseur_plateau}`
   }
 
+  surface(){
+    return this.longueur * this.largeur * 1e-6
+  }
+
   cubage(factor) {
     return this.longueur * this.largeur * this.epaisseur_plateau * 1e-9 * (factor || 1)
   }

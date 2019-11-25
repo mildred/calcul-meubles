@@ -35,6 +35,7 @@
 
   <button on:click={e => add('Porte')}>Nouvelle porte</button>
   <button on:click={e => add('Caisson')}>Nouveau caisson</button>
+  <button on:click={e => add('Etagere')}>Nouvelle étagère</button>
   <button on:click={e => add('Ensemble')}>Nouveau sous-ensemble</button>
 </Component>
 

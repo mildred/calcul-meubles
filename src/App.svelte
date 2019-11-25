@@ -4,7 +4,8 @@
   import Ensemble from './ensembles/Ensemble.svelte';
   import Porte from './ensembles/Porte.svelte';
   import Caisson from './ensembles/Caisson.svelte';
-  let components = { Porte, Caisson, Ensemble }
+  import Etagere from './ensembles/Etagere.svelte';
+  let components = { Porte, Caisson, Ensemble, Etagere }
 
   setContext('App-components', components)
 
