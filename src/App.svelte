@@ -103,6 +103,12 @@
   #json:not(:target) {
     display: none;
   }
+
+  @media print {
+    .toolbar .button {
+      display: none;
+    }
+  }
 </style>
 
 <div class="root">

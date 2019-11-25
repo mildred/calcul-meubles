@@ -22,10 +22,22 @@
     children.splice(i, 1)
     data.children = children
   }
+
+  function onHashChange(){
+    let hash = window.location.hash.replace(/^#/, '')
+    console.log(`hash change ${window.location.hash}`, document.querySelectorAll('.target'),
+    document.querySelectorAll(':target'), document.querySelectorAll(window.location.hash))
+    Array.from(document.querySelectorAll('.target')).map(x => x.classList.remove('target'))
+    Array.from(document.querySelectorAll(':target')).map(x => x.classList.add('target'))
+    Array.from(document.querySelectorAll(window.location.hash)).map(x => x.classList.add('target'))
+  }
+
+  window.addEventListener("hashchange", onHashChange, false);
+  window.addEventListener("load", onHashChange, false);
 </script>
 
 <style>
-  .component:not(:target) {
+  .component:not(:target):not(.target) {
     display: none;
   }
   .debug{
