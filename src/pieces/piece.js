@@ -48,6 +48,11 @@ export default class Piece {
            this.epaisseur + 10;
   }
 
+  get nombre_tenons(){
+    return (this.longueur_tenon1 ? 1 : 0) +
+           (this.longueur_tenon2 ? 1 : 0)
+  }
+
   get name(){
     return this.names.join(' ')
   }

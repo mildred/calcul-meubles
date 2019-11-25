@@ -98,6 +98,8 @@
     traverse_h, traverse_b,
     montant_g, montant_d,
   ].filter(x => x != null)
+
+  $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
 </script>
 
 <style>
@@ -198,6 +200,10 @@
     </form>
 
     <hr class="clear"/>
+    <dl>
+      <dt>Nombre de tenons</dt>
+      <dd>{nombre_tenons}</dd>
+    </dl>
     <ListeDebit pieces={pieces} />
   </div>
 </Component>

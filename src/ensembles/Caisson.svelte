@@ -699,6 +699,8 @@
     .concat(traverses_cote_inter_caissons.reduce((a,b) => a.concat(b), []))
     .concat(panneau_inter2_dessous.reduce((a,b) => a.concat(b), []))
     .filter(x => x)
+
+  $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
 </script>
 
 <style>
@@ -998,6 +1000,10 @@
     </form>
 
     <hr class="clear"/>
+    <dl>
+      <dt>Nombre de tenons</dt>
+      <dd>{nombre_tenons}</dd>
+    </dl>
     <ListeDebit pieces={pieces} />
   </div>
 </Component>
