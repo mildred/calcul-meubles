@@ -249,7 +249,7 @@
 
     for(let j = 0; j < num; j++) {
       let ui_casier = ui_colonne.casiers[j]
-      console.log(`fusion casier ${i+1},${j+1}`, colonne.casiers[j], ui_casier)
+      //console.log(`fusion casier ${i+1},${j+1}`, colonne.casiers[j], ui_casier)
       let casier = {
         hauteur: null,
         panneau_dessous: true,
@@ -257,7 +257,7 @@
         ...colonne.casiers[j],
         ...cleanObject(ui_casier),
       }
-      console.log(`fusion casier ${i+1},${j+1} = `, casier)
+      //console.log(`fusion casier ${i+1},${j+1} = `, casier)
       if(hauteurs[j] && hauteurs[j] != 0) {
         casier.hauteur_definie = true
         casier.hauteur = hauteurs[j]
@@ -276,64 +276,6 @@
     }
 
     return colonne
-  }
-
-  function calculPortes(opt, data){
-    //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
-    let children = [...(data.children || [])]
-    for(let i = 0; i < opt.colonnes.length; i++) {
-      let porte = opt.colonnes[i].porte || {}
-      if(!porte || porte.type == 'aucune'){
-        children[i] = {
-          ...children[i],
-          type: null,
-        }
-      } else {
-        children[i] = {
-          ...children[i],
-          type: 'Porte',
-          name: `${i+1}`,
-          id:   i,
-          defaults: {
-            force_largeur: true,
-            force_hauteur: true,
-            largeur:
-              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
-              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
-              0,
-            hauteur:
-              (porte.type == 'total')    ? opt.hauteur :
-              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
-              0,
-              epaisseur: opt.epaisseur_montants,
-              largeur_montants: opt.largeur_montants,
-              largeur_traverses: opt.largeur_traverses,
-              profondeur_tenons: opt.profondeur_tenons,
-              profondeur_rainure: opt.profondeur_rainure,
-              jeu_rainure: opt.jeu_rainure,
-              epaisseur_panneau: opt.epaisseur_panneau,
-          },
-          forceopt: {
-            largeur:
-              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
-              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
-              0,
-            hauteur:
-              (porte.type == 'total')    ? opt.hauteur :
-              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
-              0,
-          },
-        }
-      }
-    }
-    return {
-      ...data,
-      children: children,
-    }
   }
 
   function calculSubdivisionMontants(opt, ui_montants){
@@ -428,6 +370,64 @@
           ...subdivisions_montants[i],
         }
       ))
+    }
+  }
+
+  function calculPortes(opt, data){
+    //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
+    let children = [...(data.children || [])]
+    for(let i = 0; i < opt.colonnes.length; i++) {
+      let porte = opt.colonnes[i].porte || {}
+      if(!porte || porte.type == 'aucune'){
+        children[i] = {
+          ...children[i],
+          type: null,
+        }
+      } else {
+        children[i] = {
+          name: `${i+1}`,
+          ...children[i],
+          type: 'Porte',
+          id:   i,
+          defaults: {
+            force_largeur: true,
+            force_hauteur: true,
+            largeur:
+              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
+              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
+              0,
+            hauteur:
+              (porte.type == 'total')    ? opt.hauteur :
+              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
+              0,
+              epaisseur: opt.epaisseur_montants,
+              largeur_montants: opt.largeur_montants,
+              largeur_traverses: opt.largeur_traverses,
+              profondeur_tenons: opt.profondeur_tenons,
+              profondeur_rainure: opt.profondeur_rainure,
+              jeu_rainure: opt.jeu_rainure,
+              epaisseur_panneau: opt.epaisseur_panneau,
+          },
+          forceopt: {
+            largeur:
+              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
+              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
+              0,
+            hauteur:
+              (porte.type == 'total')    ? opt.hauteur :
+              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
+              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
+              0,
+          },
+        }
+      }
+    }
+    return {
+      ...data,
+      children: children,
     }
   }
 
