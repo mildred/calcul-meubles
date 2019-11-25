@@ -100,7 +100,11 @@
       return {
         ...colonne,
         casiers: Array.from(Array(num_casiers_colonnes[i]).keys())
-          .map(j => (colonne.casiers || [])[j] || {})
+          .map(j => ({
+            //panneaux_dos: true,
+            //panneau_dessous: true,
+            ...(colonne.casiers || [])[j],
+          }))
       }
     })
 
@@ -127,7 +131,7 @@
     },
     opt => updateSubdivisions(num_colonnes, opt),
     opt => calculLargeurColonnes(largeur_colonnes, opt),
-    opt => calculCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, ui_colonnes, opt),
+    opt => calculColonnesCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, ui_colonnes, opt),
     opt => calculSubdivisionMontants(opt, ui_montants))
 
   //
@@ -217,7 +221,7 @@
     }
   }
 
-  function calculCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, ui_colonnes, opt){
+  function calculColonnesCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, ui_colonnes, opt){
     let cols = opt.colonnes.length
     let colonnes = []
 
@@ -226,7 +230,7 @@
       colonnes[i] = pipeline(
         opt.colonnes[i] || {},
         col => {col.casiers = (col.casiers || []).slice(0, num); return col},
-        col => calculHauteurs(col, hauteur_casiers_colonnes[i], num, ui_colonnes[i]))
+        col => calculCasiers(i, col, hauteur_casiers_colonnes[i], num, ui_colonnes[i]))
     }
 
     return {
@@ -235,7 +239,7 @@
     }
   }
 
-  function calculHauteurs(colonne, hauteurs, num, ui_colonne){
+  function calculCasiers(i, colonne, hauteurs, num, ui_colonne){
     let espace_a_repartir = opt.hauteur - (num+1) * opt.epaisseur_montants
     let hauteurs_definies = hauteurs.filter(x => (x && x != 0))
     let casiers_a_calculer = num - hauteurs_definies.length
@@ -245,13 +249,15 @@
 
     for(let j = 0; j < num; j++) {
       let ui_casier = ui_colonne.casiers[j]
+      console.log(`fusion casier ${i+1},${j+1}`, colonne.casiers[j], ui_casier)
       let casier = {
         hauteur: null,
         panneau_dessous: true,
         panneau_dos: true,
         ...colonne.casiers[j],
-        ...ui_casier,
+        ...cleanObject(ui_casier),
       }
+      console.log(`fusion casier ${i+1},${j+1} = `, casier)
       if(hauteurs[j] && hauteurs[j] != 0) {
         casier.hauteur_definie = true
         casier.hauteur = hauteurs[j]
@@ -333,6 +339,10 @@
   function calculSubdivisionMontants(opt, ui_montants){
     let subdivisions_montants = Array.from(Array(opt.colonnes.length + 1).keys()).map((i) => {
       let ui_montant_panneaux_actifs = ((ui_montants[i] || {}).panneaux_actifs || [])
+      let ui_montant = {
+        ...ui_montants[i],
+        panneaux_actifs: [...((ui_montants[i] || {}).panneaux_actifs || [])]
+      }
       let casiers_g = (opt.colonnes[i-1] || {}).casiers || []
       let casiers_d = (opt.colonnes[i]   || {}).casiers || []
       let hauteurs_g = casiers_g.slice(0, -1).map((caisson, j) => (
@@ -376,9 +386,12 @@
           ])
         }, [])
         .map(h => ({...h, ypos: h.y1 + (h.y2 - h.y1) / 2 - opt.largeur_traverses / 2}))
+      let ui_panneaux_actifs = Array.from(Array(traverses.length + 1).keys())
+        .map(j => typeof(ui_montant.panneaux_actifs[j]) == 'boolean' ? ui_montant.panneaux_actifs[j] : null)
+        .reduce((arr, x) => arr.concat([
+          typeof(x) == 'boolean' ? x :
+          arr.length == 0        ? true : arr[arr.length-1]]), [])
       //console.log(`hauteurs_panneaux_montants[${i}] traverses =`, traverses)
-      let panneaux_actifs = Array.from(Array(traverses.length + 1).keys()).map(j => {
-      })
       let panneaux = Array.from(Array(traverses.length + 1).keys()).map(j => {
         let first = (j == 0)
         let last  = (j >= traverses.length)
@@ -392,7 +405,7 @@
           y2:     pan[1],
           gauche: first ? 0 : traverses[j-1].gauche[1],
           droite: first ? 0 : traverses[j-1].droite[1],
-          actif:  true,
+          actif:  ui_panneaux_actifs[j],
         }
       })
       return {
@@ -564,7 +577,7 @@
     ))
 
   $: panneaux_cote = opt.montants.map((sub, i) => (
-    sub.panneaux.map((panneau, j) => (
+    sub.panneaux.map((panneau, j) => !panneau.actif ? null : (
       new Piece()
       .add_name("Panneau",
         (i > 0 && i < opt.colonnes.length) ? "coté" : undefined,
@@ -849,7 +862,8 @@
           <label><InputCheckbox checked={true} /> panneau droit</label>
           -->
           {#if selection_casier_j == 0}
-          <label><InputCheckbox
+          <label><InputCheckbox tristate={false}
+            def={opt.panneau_dessus}
             bind:checked={ui.panneau_dessus}
             /> panneau dessus (tout le meuble)</label>
           {:else}
@@ -864,18 +878,18 @@
             /> panneau dos</label>
           {#if selection_casier_j < ui_colonnes[selection_casier_i].casiers.length-1}
           <label><InputCheckbox tristate={false}
-            def=opt.colonnes[selection_casier_i].casiers[selection_casier_j].panneau_dessous}
+            def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].panneau_dessous}
             bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].panneau_dessous}
             /> panneau dessous</label>
           {:else}
-          <label><InputCheckbox
+          <label><InputCheckbox tristate={false}
+            def={opt.panneau_dessous}
             bind:checked={ui.panneau_dessous}
             /> panneau dessous (tout le meuble)</label>
           {/if}
           {#each opt.montants[selection_casier_i].panneaux as panneau, k}
             {#if panneau.droite == selection_casier_j}
-              <label><InputCheckbox
-                tristate={false}
+              <label><InputCheckbox tristate={false}
                 def={opt.montants[selection_casier_i].panneaux[k].actif}
                 bind:checked={ui_montants[selection_casier_i].panneaux_actifs[k]}
                 /> panneau gauche (n°{k+1})</label>
@@ -883,8 +897,7 @@
           {/each}
           {#each opt.montants[selection_casier_i+1].panneaux as panneau, k}
             {#if panneau.gauche == selection_casier_j}
-              <label><InputCheckbox
-                tristate={false}
+              <label><InputCheckbox tristate={false}
                 def={opt.montants[selection_casier_i+1].panneaux[k].actif}
                 bind:checked={ui_montants[selection_casier_i+1].panneaux_actifs[k]}
                 /> panneau droite (n°{k+1})</label>

@@ -23,8 +23,11 @@
 
 <input
   type=checkbox
+  data-def={def}
+  data-force={force}
+  data-checked={checked}
   checked={(!checked && checked !== false) ? def : checked}
-  readonly={!checked && checked !== false}
+  readonly={tristate ? (!checked && checked !== false) : force}
   disabled={force}
   on:change={change}
   />

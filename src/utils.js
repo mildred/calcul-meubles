@@ -1,7 +1,7 @@
 
 export function cleanObject(src){
   return Object.keys(src)
-    .filter(k => (src[k] != null))
+    .filter(k => (src[k] !== null && src[k] !== undefined))
     .reduce((m, k) => (m[k] = src[k], m), {})
 }
 
