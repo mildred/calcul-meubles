@@ -35,10 +35,8 @@
     ],
     montants: [
       {
-        panneaux: [true],
       },
       {
-        panneaux: [true],
       },
     ],
     colonnes: [
@@ -97,9 +95,10 @@
 
   let montants = opt.montants
   $: montants = pipeline(
-    montants.slice(0, montants.length - 1),
-    m => Array(num_colonnes).fill(1).map((_, i) => m[i] || {panneaux:[true]}),
-    m => m.concat([montants[montants.length-1]]))
+      montants.slice(0, montants.length - 1),
+      m => Array(num_colonnes).fill(1).map((_, i) => m[i] || {panneaux_actifs:[]}),
+      m => m.concat([montants[montants.length-1]]))
+    .map(montant => ({...montant, panneaux_actifs: [...(montant.panneaux_actifs||[])]}))
 
   let selection_casier = '0,0'
   $: [selection_casier_i, selection_casier_j] = selection_casier.split(',').map(n => parseInt(n))
@@ -117,7 +116,8 @@
     },
     opt => updateSubdivisions(num_colonnes, opt),
     opt => calculLargeurColonnes(largeur_colonnes, opt),
-    opt => calculCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, opt))
+    opt => calculCasiers(num_casiers_colonnes, hauteur_casiers_colonnes, opt),
+    opt => calculSubdivisionMontants(opt, montants))
 
   //
   // Update data from opt
@@ -146,7 +146,6 @@
 
     for(let i = 0; i<=num_colonnes; i++) {
       opt2.montants[i] = {
-        panneaux: [true],
         ...opt2.montants[i],
       }
       if (i >= num_colonnes) break;
@@ -318,6 +317,88 @@
     }
   }
 
+  function calculSubdivisionMontants(opt, ui_montants){
+    let subdivisions_montants = Array.from(Array(opt.colonnes.length + 1).keys()).map((i) => {
+      let ui_montant_panneaux_actifs = ((ui_montants[i] || {}).panneaux_actifs || [])
+      let casiers_g = (opt.colonnes[i-1] || {}).casiers || []
+      let casiers_d = (opt.colonnes[i]   || {}).casiers || []
+      let hauteurs_g = casiers_g.slice(0, -1).map((caisson, j) => (
+        {
+          gauche: [j, j+1],
+          y1: opt.epaisseur_montants * (j+1)
+            + casiers_g.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
+        }))
+      let hauteurs_d = casiers_d.slice(0, -1).map((caisson, j) => (
+        {
+          droite: [j, j+1],
+          y1: opt.epaisseur_montants * (j+1)
+            + casiers_d.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
+        }))
+      //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
+      //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i}] =`, opt.colonnes[i])
+      //console.log(`hauteurs_caisson_montants[${i}] hauteurs_g =`, hauteurs_g)
+      //console.log(`hauteurs_caisson_montants[${i}] hauteurs_d =`, hauteurs_d)
+      let traverses = hauteurs_g.concat(hauteurs_d)
+        .sort((a,b) => (a.y1 < b.y1) ? -1 : (a.y1 > b.y1) ? 1 : 0)
+        .map(h => ({...h, y2: h.y1 + opt.epaisseur_montants}))
+        .reduce((hh, h1) => {
+          if (hh.length == 0) return [{
+            gauche: [0, 0],
+            droite: [0, 0],
+            ...h1
+          }]
+          let h0 = hh[hh.length-1]
+          if (h1.y2 - h0.y1 <= opt.largeur_traverses) {
+            hh[hh.length-1] = {
+              ...h0,
+              ...h1,
+              y2: h1.y2,
+            }
+            return hh
+          }
+          return hh.concat([{
+            gauche: [h0.gauche[1], h0.gauche[1]],
+            droite: [h0.droite[1], h0.droite[1]],
+            ...h1}
+          ])
+        }, [])
+        .map(h => ({...h, ypos: h.y1 + (h.y2 - h.y1) / 2 - opt.largeur_traverses / 2}))
+      //console.log(`hauteurs_panneaux_montants[${i}] traverses =`, traverses)
+      let panneaux_actifs = Array.from(Array(traverses.length + 1).keys()).map(j => {
+      })
+      let panneaux = Array.from(Array(traverses.length + 1).keys()).map(j => {
+        let first = (j == 0)
+        let last  = (j >= traverses.length)
+        let pan =
+          (first && last) ? [ opt.largeur_traverses, opt.hauteur - opt.largeur_traverses ] :
+          (first)         ? [ opt.largeur_traverses, traverses[j].y1 ] :
+          (!last)         ? [ traverses[j-1].y2, traverses[j].y1 ] :
+                            [ traverses[j-1].y2, opt.hauteur - opt.largeur_traverses ];
+        return {
+          y1:     pan[0],
+          y2:     pan[1],
+          gauche: first ? 0 : traverses[j-1].gauche[1],
+          droite: first ? 0 : traverses[j-1].droite[1],
+          actif:  true,
+        }
+      })
+      return {
+        traverses: traverses,
+        panneaux: panneaux,
+      }
+    })
+
+    return {
+      ...opt,
+      montants : opt.montants.map((m, i) => (
+        {
+          ...m,
+          ...subdivisions_montants[i],
+        }
+      ))
+    }
+  }
+
   //
   // Pièces
   //
@@ -455,74 +536,8 @@
     .add_name("arrière")
     .put(null, null, 0)))
 
-  $: subdivisions_montants = Array.from(Array(opt.colonnes.length + 1).keys()).map((i) => {
-    let casiers_g = (opt.colonnes[i-1] || {}).casiers || []
-    let casiers_d = (opt.colonnes[i]   || {}).casiers || []
-    let hauteurs_g = casiers_g.slice(0, -1).map((caisson, j) => (
-      {
-        gauche: [j, j+1],
-        y1: opt.epaisseur_montants * (j+1)
-          + casiers_g.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
-      }))
-    let hauteurs_d = casiers_d.slice(0, -1).map((caisson, j) => (
-      {
-        droite: [j, j+1],
-        y1: opt.epaisseur_montants * (j+1)
-          + casiers_d.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
-      }))
-    //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
-    //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i}] =`, opt.colonnes[i])
-    //console.log(`hauteurs_caisson_montants[${i}] hauteurs_g =`, hauteurs_g)
-    //console.log(`hauteurs_caisson_montants[${i}] hauteurs_d =`, hauteurs_d)
-    let traverses = hauteurs_g.concat(hauteurs_d)
-      .sort((a,b) => (a.y1 < b.y1) ? -1 : (a.y1 > b.y1) ? 1 : 0)
-      .map(h => ({...h, y2: h.y1 + opt.epaisseur_montants}))
-      .reduce((hh, h1) => {
-        if (hh.length == 0) return [{
-          gauche: [0, 0],
-          droite: [0, 0],
-          ...h1
-        }]
-        let h0 = hh[hh.length-1]
-        if (h1.y2 - h0.y1 <= opt.largeur_traverses) {
-          hh[hh.length-1] = {
-            ...h0,
-            ...h1,
-            y2: h1.y2,
-          }
-          return hh
-        }
-        return hh.concat([{
-          gauche: [h0.gauche[1], h0.gauche[1]],
-          droite: [h0.droite[1], h0.droite[1]],
-          ...h1}
-        ])
-      }, [])
-      .map(h => ({...h, ypos: h.y1 + (h.y2 - h.y1) / 2 - opt.largeur_traverses / 2}))
-    //console.log(`hauteurs_panneaux_montants[${i}] traverses =`, traverses)
-    let panneaux = Array.from(Array(traverses.length + 1).keys()).map(j => {
-      let first = (j == 0)
-      let last  = (j >= traverses.length)
-      let pan =
-        (first && last) ? [ opt.largeur_traverses, opt.hauteur - opt.largeur_traverses ] :
-        (first)         ? [ opt.largeur_traverses, traverses[j].y1 ] :
-        (!last)         ? [ traverses[j-1].y2, traverses[j].y1 ] :
-                          [ traverses[j-1].y2, opt.hauteur - opt.largeur_traverses ];
-      return {
-        y1:     pan[0],
-        y2:     pan[1],
-        gauche: first ? 0 : traverses[j-1].gauche[1],
-        droite: first ? 0 : traverses[j-1].droite[1],
-      }
-    })
-    return {
-      traverses: traverses,
-      panneaux: panneaux,
-    }
-  })
-
   $: traverses_cote_inter_caissons =
-    subdivisions_montants.map((sub, i) => (
+    opt.montants.map((sub, i) => (
       sub.traverses.map((h, j) => (traverses_cote
         .add_name(
           (i == 0)                  ? "gauche" :
@@ -535,7 +550,7 @@
       ))
     ))
 
-  $: panneaux_cote = subdivisions_montants.map((sub, i) => (
+  $: panneaux_cote = opt.montants.map((sub, i) => (
     sub.panneaux.map((panneau, j) => (
       new Piece()
       .add_name("Panneau",
@@ -841,21 +856,21 @@
             bind:checked={opt.panneau_dessous}
             /> panneau dessous (tout le meuble)</label>
           {/if}
-          {#each subdivisions_montants[selection_casier_i].panneaux as panneau, k}
+          {#each opt.montants[selection_casier_i].panneaux as panneau, k}
             {#if panneau.droite == selection_casier_j}
               <label><InputCheckbox
                 tristate={false}
-                def={opt.montants[selection_casier_i].panneaux[k]}
-                bind:checked={montants[selection_casier_i].panneaux[k]}
+                def={opt.montants[selection_casier_i].panneaux[k].actif}
+                bind:checked={montants[selection_casier_i].panneaux_actifs[k]}
                 /> panneau gauche (n°{k+1})</label>
             {/if}
           {/each}
-          {#each subdivisions_montants[selection_casier_i+1].panneaux as panneau, k}
+          {#each opt.montants[selection_casier_i+1].panneaux as panneau, k}
             {#if panneau.gauche == selection_casier_j}
               <label><InputCheckbox
                 tristate={false}
-                def={opt.montants[selection_casier_i+1].panneaux[k]}
-                bind:checked={montants[selection_casier_i+1].panneaux[k]}
+                def={opt.montants[selection_casier_i+1].panneaux[k].actif}
+                bind:checked={montants[selection_casier_i+1].panneaux_actifs[k]}
                 /> panneau droite (n°{k+1})</label>
             {/if}
           {/each}
