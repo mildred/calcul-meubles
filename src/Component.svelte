@@ -24,9 +24,6 @@
   }
 
   function onHashChange(){
-    let hash = window.location.hash.replace(/^#/, '')
-    console.log(`hash change ${window.location.hash}`, document.querySelectorAll('.target'),
-    document.querySelectorAll(':target'), document.querySelectorAll(window.location.hash))
     Array.from(document.querySelectorAll('.target')).map(x => x.classList.remove('target'))
     Array.from(document.querySelectorAll(':target')).map(x => x.classList.add('target'))
     Array.from(document.querySelectorAll(window.location.hash)).map(x => x.classList.add('target'))
@@ -47,6 +44,8 @@
 
 <div class="component" id="component-{path}">
   <slot></slot>
+
+  <!-- <pre>data.children = {JSON.stringify(data.children, null, 2)}</pre> -->
 
   {#if data.children && data.children.length}
   <ul>

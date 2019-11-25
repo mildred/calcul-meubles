@@ -12,3 +12,7 @@ export function pipeline(data, ...operations){
   }
   return res
 }
+
+export function nextId(list) {
+  return list.reduce((id, item) => Math.max(id, item.id+1), list.length)
+}

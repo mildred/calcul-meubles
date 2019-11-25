@@ -19,8 +19,8 @@
     ))
 
 
-  let cubeprice = 0
-  let cubemargin = 100
+  let cubeprice = 1440
+  let cubemargin = 125
 
   $: total_cube = pieces3.map(p => p.que * p.cubage(cubemargin/100)).reduce((a, b) => (a+b))
   $: total_prix = pieces3.map(p => p.que * p.prix(cubeprice, cubemargin/100)).reduce((a, b) => (a+b))

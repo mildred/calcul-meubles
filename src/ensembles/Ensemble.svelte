@@ -1,4 +1,5 @@
 <script>
+  import { nextId } from '../utils.js';
   import Component from '../Component.svelte';
 
   export let name = null
@@ -14,7 +15,7 @@
   }
 
   function add(type){
-    let id = data.children.length
+    let id = nextId(data.children)
     let name = prompt("Nom du sous-ensemble :", `${path}-${id}`) || `${path}-${id}`
     data.children = [...data.children, {
       type: type,

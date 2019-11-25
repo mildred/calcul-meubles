@@ -6,6 +6,7 @@
   import ListeDebit from '../ListeDebit.svelte'
   import InputCheckbox from '../controls/InputCheckbox.svelte';
   import InputNumber from '../controls/InputNumber.svelte';
+  import InputSelect from '../controls/InputSelect.svelte';
 
   export let path
   export let initdata = {}
@@ -31,8 +32,7 @@
     epaisseur_panneau: 16,
     panneau_dessus: true,
     panneau_dessous: true,
-    montants_inter: [
-    ],
+    montants_inter_longueur_tenon: 20,
     montants: [
       {
       },
@@ -153,7 +153,6 @@
   function updateSubdivisions(num_colonnes, opt){
     let opt2 = {...opt}
     opt2.colonnes            = opt.colonnes.slice(0, num_colonnes)
-    opt2.montants_inter      = opt.montants_inter.slice(0, num_colonnes-1)
     opt2.montants            = pipeline(
       opt.montants.slice(0, opt.montants.length-1),
       m => Array(num_colonnes).fill(1).map((_, i) => m[i]),
@@ -176,12 +175,6 @@
         ],
         porte: {},
         ...opt2.colonnes[i],
-      }
-      if (i<num_colonnes - 1) {
-        opt2.montants_inter[i] = {
-          longueur_tenon: 20,
-          ...opt2.montants_inter[i],
-        }
       }
     }
     return opt2
@@ -227,10 +220,18 @@
 
     for(let i = 0; i < cols; i++) {
       let num = num_casiers_colonnes[i]
+      let ui_colonne = ui_colonnes[i]
       colonnes[i] = pipeline(
         opt.colonnes[i] || {},
+        col => ({
+          ...col,
+          porte: {
+            ...col.porte,
+            ...ui_colonne.porte,
+          },
+        }),
         col => {col.casiers = (col.casiers || []).slice(0, num); return col},
-        col => calculCasiers(i, col, hauteur_casiers_colonnes[i], num, ui_colonnes[i]))
+        col => calculCasiers(i, col, hauteur_casiers_colonnes[i], num, ui_colonne))
     }
 
     return {
@@ -376,55 +377,66 @@
   function calculPortes(opt, data){
     //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
     let children = [...(data.children || [])]
-    for(let i = 0; i < opt.colonnes.length; i++) {
-      let porte = opt.colonnes[i].porte || {}
-      if(!porte || porte.type == 'aucune'){
-        children[i] = {
-          ...children[i],
-          type: null,
-        }
-      } else {
-        children[i] = {
-          name: `${i+1}`,
-          ...children[i],
-          type: 'Porte',
-          id:   i,
-          defaults: {
+
+    // Migrate old portes
+    for(let i = 0; i < children.length; i++){
+      if(!children[i].source) children[i].source = ['Porte', 'colonne', i]
+    }
+
+    // Create new
+    for(let i = 0; i < opt.colonnes.length; i++){
+      const colonne = opt.colonnes[i]
+      if (!colonne.porte.type) continue; // Pas de porte
+      const child_idx = children.findIndex(c => c.source.join('-') == `Porte-colonne-${i}`)
+      if (child_idx != -1) continue; // Porte trouvée
+
+      children = [...children, {
+        source: ['Porte', 'colonne', i],
+        type:   colonne.porte.type,
+        id:     nextId(children),
+      }]
+    }
+
+    // Update values
+    for(let i = 0; i < children.length; i++){
+      const source = children[i].source
+      switch(source[0]) {
+      default: break
+
+      case 'Porte':
+        let defaults
+        switch(source[1]){
+        default: break
+
+        case 'colonne':
+          const col = opt.colonnes[source[2]]
+          defaults = {
             force_largeur: true,
             force_hauteur: true,
             largeur:
-              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
-              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
-              0,
+              (col.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
+              (col.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
+              (col.porte.type == 'encastre') ? col.largeur
+                                             : 0,
             hauteur:
-              (porte.type == 'total')    ? opt.hauteur :
-              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
-              0,
-              epaisseur: opt.epaisseur_montants,
-              largeur_montants: opt.largeur_montants,
-              largeur_traverses: opt.largeur_traverses,
-              profondeur_tenons: opt.profondeur_tenons,
-              profondeur_rainure: opt.profondeur_rainure,
-              jeu_rainure: opt.jeu_rainure,
-              epaisseur_panneau: opt.epaisseur_panneau,
-          },
-          forceopt: {
-            largeur:
-              (porte.type == 'total')    ? opt.colonnes[i].largeur + 2 * opt.epaisseur_montants :
-              (porte.type == 'demi')     ? opt.colonnes[i].largeur + opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.colonnes[i].largeur :
-              0,
-            hauteur:
-              (porte.type == 'total')    ? opt.hauteur :
-              (porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
-              (porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants :
-              0,
-          },
+              (col.porte.type == 'total')    ? opt.hauteur :
+              (col.porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
+              (col.porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants
+                                             : 0,
+          }
+          break
         }
+
+        children[i] = {
+          name: `colonne n°${i+1}`,
+          ...children[i],
+          type: 'Porte',
+          defaults: defaults,
+        }
+        break
       }
     }
+
     return {
       ...data,
       children: children,
@@ -545,18 +557,18 @@
           + col.casiers.slice(0, j).reduce((n, c) => n + c.hauteur, 0),
         0, 'yxz')))))
 
-  $: montants_cloisons = opt.montants_inter.map((m, i) => (new Piece()
+  $: montants_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (new Piece()
     .add_name("Montant", `cloison n°${i+1}`)
     .build(
-      opt.hauteur - 2 * (opt.epaisseur_montants - m.longueur_tenon),
+      opt.hauteur - 2 * (opt.epaisseur_montants - opt.montants_inter_longueur_tenon),
       opt.largeur_montants,
       opt.epaisseur_montants)
-    .usine_tenons(m.longueur_tenon)
+    .usine_tenons(opt.montants_inter_longueur_tenon)
     .put(
       opt.epaisseur_montants
         + opt.colonnes.slice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
-      opt.epaisseur_montants - m.longueur_tenon,
+      opt.epaisseur_montants - opt.montants_inter_longueur_tenon,
       null,
       'yzx')))
 
@@ -602,7 +614,7 @@
     ))
   ))
 
-  $: traverses_cloisons = opt.montants_inter.map((m, i) => (new Piece()
+  $: traverses_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (new Piece()
     .add_name("Traverse", `cloison n°${i+1}`)
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
@@ -770,6 +782,11 @@
   .prefs-casier {
     display: flex;
     flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .prefs-casier > * {
+    margin: 0.5em;
   }
 </style>
 
@@ -903,7 +920,23 @@
       </div>
 
       <div>
-        <p><strong>Colonne n°{selection_casier_i+1}, casier n° {selection_casier_j+1}</strong></p>
+        <p><strong>Colonne n°{selection_casier_i+1}</strong></p>
+        <fieldset>
+          <legend>Porte colonne n°{selection_casier_i+1}</legend>
+          <label>
+            <span>Type :&nbsp;</span>
+            <InputSelect def={opt.colonnes[selection_casier_i].porte.type} bind:value={ui_colonnes[selection_casier_i].porte.type}>
+              <option value="">Aucune</option>
+              <option value="total">Recouvrement total</option>
+              <option value="demi">Recouvrement à moitié</option>
+              <option value="encastre">Encastré</option>
+            </InputSelect>
+          </label>
+        </fieldset>
+      </div>
+
+      <div>
+        <p><strong>Casier n° {selection_casier_j+1}</strong></p>
         <p>
           <!--
           <label><InputCheckbox checked={true} /> panneau gauche</label>
@@ -952,59 +985,28 @@
             {/if}
           {/each}
         </p>
+        <fieldset style="display: none">
+          <legend>
+            <label><InputCheckbox tristate={false} /> Porte casier</label>
+          </legend>
+        </fieldset>
       </div>
     </div>
 
     <hr/>
 
-    <label><span>Épaisseur montants et traverses : </span><input type=number bind:value={opt.epaisseur_montants} min=0/> mm</label>
-    <label><span>Largeur montants : </span><input type=number bind:value={opt.largeur_montants} min=0/> mm</label>
-    <label><span>Largeur traverses : </span><input type=number bind:value={opt.largeur_traverses} min=0/> mm</label>
-    <label><span>Profondeur tenons cotés : </span><input type=number bind:value={opt.profondeur_tenons_cotes} min=0/> mm</label>
-    <label><span>Profondeur tenons : </span><input type=number bind:value={opt.profondeur_tenons} min=0/> mm</label>
+    <label><span>Épaisseur montants et traverses : </span><InputNumber def={opt.epaisseur_montants} bind:value={ui.epaisseur_montants} min=0/> mm</label>
+    <label><span>Largeur montants : </span><InputNumber def={opt.largeur_montants} bind:value={ui.largeur_montants} min=0/> mm</label>
+    <label><span>Largeur traverses : </span><InputNumber def={opt.largeur_traverses} bind:value={ui.largeur_traverses} min=0/> mm</label>
+    <label><span>Profondeur tenons cotés : </span><InputNumber def={opt.profondeur_tenons_cotes} bind:value={ui.profondeur_tenons_cotes} min=0/> mm</label>
+    <label><span>Profondeur tenons : </span><InputNumber def={opt.profondeur_tenons} bind:value={ui.profondeur_tenons} min=0/> mm</label>
 
     <hr/>
 
-    <label><span>Épaisseur panneau : </span><input type=number bind:value={opt.epaisseur_panneau} min=0/> mm </label>
-    <label><span>Profondeur rainure : </span><input type=number bind:value={opt.profondeur_rainure} min=0/> mm</label>
-    <label><span>Jeu panneau / rainure : </span><input type=number bind:value={opt.jeu_rainure} min=0/> mm</label>
-
-    <p>Montants intermédiaires :</p>
-    <table>
-      <tr>
-        <th></th>
-        <th>Longueur tenon montant</th>
-      </tr>
-      {#each opt.montants_inter as montant_inter, i}
-      <tr>
-        <td>Montant intermédiaire {i+1}</td>
-        <td>
-          <input type=number bind:value={opt.montants_inter[i].longueur_tenon} min=0/> mm
-        </td>
-      </tr>
-      {/each}
-    </table>
-
-    <p>Portes :</p>
-    <table>
-      <tr>
-        <th></th>
-        <th>Type</th>
-      </tr>
-      {#each opt.colonnes as colonne, i}
-      <tr>
-        <td>Porte {i+1}</td>
-        <td>
-          <select bind:value={colonne.porte.type}>
-            <option value="aucune">Aucune</option>
-            <option value="total">Recouvrement total</option>
-            <option value="demi">Recouvrement à moitié</option>
-            <option value="encastre">Encastré</option>
-          </select>
-        </td>
-      </tr>
-      {/each}
-    </table>
+    <label><span>Épaisseur panneau : </span><InputNumber def={opt.epaisseur_panneau} bind:value={ui.epaisseur_panneau} min=0/> mm </label>
+    <label><span>Profondeur rainure : </span><InputNumber def={opt.profondeur_rainure} bind:value={ui.profondeur_rainure} min=0/> mm</label>
+    <label><span>Jeu panneau / rainure : </span><InputNumber def={opt.jeu_rainure} bind:value={ui.jeu_rainure} min=0/> mm</label>
+    <label><span>Longueur tenons cloisons : </span> <InputNumber def={opt.montants_inter_longueur_tenon} bind:value={ui.montants_inter_longueur_tenon} min=0/> mm</label>
 
     </form>
 

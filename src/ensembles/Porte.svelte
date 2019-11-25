@@ -19,8 +19,8 @@
     largeur: 400,
     hauteur: 600,
     epaisseur: 18,
-    largeur_montants: 50,
-    largeur_traverses: 50,
+    largeur_montants: 70,
+    largeur_traverses: 70,
     profondeur_tenons: 30,
     profondeur_rainure: 10,
     profondeur_profil: 15,
@@ -194,10 +194,10 @@
     <label><span>Hauteur   : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>
     <label><span>Épaisseur : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.epaisseur} force={defaults.force_epaisseur}/> mm</label>
     <hr/>
-    <label><span>Largeur traverses : </span><InputNumber min=0 bind:value={ui.largeur_montants} def={defaults.largeur_montants}/> mm</label>
-    <label><span>Épaisseur panneau : </span><InputNumber min=0 bind:value={ui.largeur_traverses} def={defaults.largeur_traverses}/> mm</label>
+    <label><span>Largeur montants : </span><InputNumber min=0 bind:value={ui.largeur_montants} def={defaults.largeur_montants}/> mm</label>
+    <label><span>largeur traverses : </span><InputNumber min=0 bind:value={ui.largeur_traverses} def={defaults.largeur_traverses}/> mm</label>
     <hr/>
-    <label><span>Largeur montants : </span><InputNumber min=0 bind:value={ui.epaisseur_panneau} def={defaults.epaisseur_panneau}/> mm</label>
+    <label><span>Épaisseur panneau : </span><InputNumber min=0 bind:value={ui.epaisseur_panneau} def={defaults.epaisseur_panneau}/> mm</label>
     <label><span>Profondeur rainures : </span><InputNumber min=0 bind:value={ui.profondeur_rainure} def={defaults.profondeur_rainure}/> mm</label>
     <label><span>Jeu paneau / rainure : </span><InputNumber min=0 bind:value={ui.jeu_rainure} def={defaults.jeu_rainure}/> mm</label>
     {#if opt.type == 'tenon-mortaise' }
