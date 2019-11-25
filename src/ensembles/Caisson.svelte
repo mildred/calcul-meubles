@@ -348,13 +348,13 @@
       let hauteurs_g = casiers_g.slice(0, -1).map((caisson, j) => (
         {
           gauche: [j, j+1],
-          y1: opt.epaisseur_montants * (j+1)
+          [0]: opt.epaisseur_montants * (j+1)
             + casiers_g.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
         }))
       let hauteurs_d = casiers_d.slice(0, -1).map((caisson, j) => (
         {
           droite: [j, j+1],
-          y1: opt.epaisseur_montants * (j+1)
+          [0]: opt.epaisseur_montants * (j+1)
             + casiers_d.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
         }))
       //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
@@ -362,8 +362,8 @@
       //console.log(`hauteurs_caisson_montants[${i}] hauteurs_g =`, hauteurs_g)
       //console.log(`hauteurs_caisson_montants[${i}] hauteurs_d =`, hauteurs_d)
       let traverses = hauteurs_g.concat(hauteurs_d)
-        .sort((a,b) => (a.y1 < b.y1) ? -1 : (a.y1 > b.y1) ? 1 : 0)
-        .map(h => ({...h, y2: h.y1 + opt.epaisseur_montants}))
+        .sort((a,b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)
+        .map(h => ({...h, [1]: h[0] + opt.epaisseur_montants}))
         .reduce((hh, h1) => {
           if (hh.length == 0) return [{
             gauche: [0, 0],
@@ -371,11 +371,11 @@
             ...h1
           }]
           let h0 = hh[hh.length-1]
-          if (h1.y2 - h0.y1 <= opt.largeur_traverses) {
+          if (h1[1] - h0[0] <= opt.largeur_traverses) {
             hh[hh.length-1] = {
               ...h0,
               ...h1,
-              y2: h1.y2,
+              [1]: h1[1],
             }
             return hh
           }
@@ -385,7 +385,11 @@
             ...h1}
           ])
         }, [])
-        .map(h => ({...h, ypos: h.y1 + (h.y2 - h.y1) / 2 - opt.largeur_traverses / 2}))
+        .map(h => ({
+          ...h,
+          y1: h[0] + (h[1] - h[0]) / 2 - opt.largeur_traverses / 2,
+          y2: h[0] + (h[1] - h[0]) / 2 + opt.largeur_traverses / 2,
+        }))
       let ui_panneaux_actifs = Array.from(Array(traverses.length + 1).keys())
         .map(j => typeof(ui_montant.panneaux_actifs[j]) == 'boolean' ? ui_montant.panneaux_actifs[j] : null)
         .reduce((arr, x) => arr.concat([
@@ -395,14 +399,16 @@
       let panneaux = Array.from(Array(traverses.length + 1).keys()).map(j => {
         let first = (j == 0)
         let last  = (j >= traverses.length)
-        let pan =
-          (first && last) ? [ opt.largeur_traverses, opt.hauteur - opt.largeur_traverses ] :
-          (first)         ? [ opt.largeur_traverses, traverses[j].y1 ] :
-          (!last)         ? [ traverses[j-1].y2, traverses[j].y1 ] :
-                            [ traverses[j-1].y2, opt.hauteur - opt.largeur_traverses ];
+        let cote  = (i == 0 || i == opt.colonnes.length)
+
         return {
-          y1:     pan[0],
-          y2:     pan[1],
+          first:  first,
+          last:   last,
+          cote:   cote,
+          y1:     first ? (opt.largeur_traverses + (cote ? 0 : opt.epaisseur_montants))
+                        : traverses[j-1].y2,
+          y2:     last  ? (opt.hauteur - opt.largeur_traverses - (cote ? 0 : opt.epaisseur_montants))
+                        : traverses[j].y1,
           gauche: first ? 0 : traverses[j-1].gauche[1],
           droite: first ? 0 : traverses[j-1].droite[1],
           actif:  ui_panneaux_actifs[j],
@@ -478,7 +484,7 @@
     .put(opt.largeur - traverses_cote.epaisseur, opt.hauteur - traverses_cote.largeur)
 
   $: traverses = new Piece()
-    .add_name("Traverse")
+    .add_name("Traverse", "principale")
     .build(
       opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
       opt.largeur_traverses,
@@ -539,8 +545,8 @@
           + col.casiers.slice(0, j).reduce((n, c) => n + c.hauteur, 0),
         0, 'yxz')))))
 
-  $: montants_inter = opt.montants_inter.map((m, i) => (new Piece()
-    .add_name("Montant", "intermédiaire", `cloison n°${i+1}`)
+  $: montants_cloisons = opt.montants_inter.map((m, i) => (new Piece()
+    .add_name("Montant", `cloison n°${i+1}`)
     .build(
       opt.hauteur - 2 * (opt.epaisseur_montants - m.longueur_tenon),
       opt.largeur_montants,
@@ -554,11 +560,11 @@
       null,
       'yzx')))
 
-  $: montants_inter_av = montants_inter.map((m, i) => (m
+  $: montants_cloisons_av = montants_cloisons.map((m, i) => (m
     .add_name("avant")
     .put(null, null, opt.profondeur - m.largeur)))
 
-  $: montants_inter_ar = montants_inter.map((m, i) => (m
+  $: montants_cloisons_ar = montants_cloisons.map((m, i) => (m
     .add_name("arrière")
     .put(null, null, 0)))
 
@@ -566,23 +572,22 @@
     opt.montants.map((sub, i) => (
       sub.traverses.map((h, j) => (traverses_cote
         .add_name(
-          (i == 0)                  ? "gauche" :
-          (i < opt.colonnes.length) ? `cloison n°${i}` : "droite")
+          (i == 0)                  ? "coté gauche" :
+          (i < opt.colonnes.length) ? `cloison n°${i}` : "coté droit")
         .add_name(`caisson n°${j+1}`)
         .put(
           opt.epaisseur_montants * (i)
             + opt.colonnes.slice(0, i).reduce((n, c) => n+c.largeur, 0),
-          h.ypos)
+          h.y1)
       ))
     ))
 
-  $: panneaux_cote = opt.montants.map((sub, i) => (
+  $: panneaux_cote_et_cloisons = opt.montants.map((sub, i) => (
     sub.panneaux.map((panneau, j) => !panneau.actif ? null : (
       new Piece()
       .add_name("Panneau",
-        (i > 0 && i < opt.colonnes.length) ? "coté" : undefined,
-        (i == 0)                   ? "gauche" :
-        (i >= opt.colonnes.length) ? "droit"  : `montant n°${i}`,
+        (i == 0)                   ? "coté gauche" :
+        (i >= opt.colonnes.length) ? "coté droit"  : `cloison n°${i}`,
         `caisson n°${j+1}`)
       .build(
         panneau.y2 - panneau.y1 + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
@@ -597,27 +602,26 @@
     ))
   ))
 
-  $: traverse_inter = new Piece()
-    .add_name("Traverse", "intermédiaire")
+  $: traverses_cloisons = opt.montants_inter.map((m, i) => (new Piece()
+    .add_name("Traverse", `cloison n°${i+1}`)
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
       opt.epaisseur_montants)
     .usine_tenons(opt.profondeur_tenons_cotes)
-    .put(null, null, opt.largeur_montants - opt.profondeur_tenons_cotes, 'zyx')
-
-  $: traverses_inter_cote = opt.montants_inter.map((m, i) => (traverse_inter
-    .add_name(`cloison n°${i+1}`)
     .put(
       opt.epaisseur_montants
         + opt.colonnes.slice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
-        + i * opt.epaisseur_montants)))
+        + i * opt.epaisseur_montants,
+      null,
+      opt.largeur_montants - opt.profondeur_tenons_cotes,
+      'zyx') ))
 
-  $: traverses_inter_h = traverses_inter_cote.map((t, i) => (t
+  $: traverses_cloisons_h = traverses_cloisons.map((t, i) => (t
     .add_name("haut")
     .put(null, opt.epaisseur_montants)))
 
-  $: traverses_inter_b = traverses_inter_cote.map((t, i) => (t
+  $: traverses_cloisons_b = traverses_cloisons.map((t, i) => (t
     .add_name("bas")
     .put(null, opt.hauteur - opt.epaisseur_montants - t.largeur)))
 
@@ -647,7 +651,7 @@
 
   $: traverses_inter2_ar = traverses_inter2_av_ar.map((col, i) => (
     col.map((tr, j) => (tr == null) ? null : (tr
-      .add_name("arrière",`cloison n°${i+1}`, `caisson n°${j}`)
+      .add_name("arrière", `cloison n°${i+1}`, `caisson n°${j}`)
       .put(null, null, 0)
     ))
   ))
@@ -685,11 +689,11 @@
     panneau_h, panneau_b,
   ]
     .concat(panneaux_dos.reduce((a,b) => a.concat(b), []))
-    .concat(panneaux_cote.reduce((a,b) => a.concat(b), []))
-    .concat(montants_inter_ar)
-    .concat(montants_inter_av)
-    .concat(traverses_inter_h)
-    .concat(traverses_inter_b)
+    .concat(panneaux_cote_et_cloisons.reduce((a,b) => a.concat(b), []))
+    .concat(montants_cloisons_ar)
+    .concat(montants_cloisons_av)
+    .concat(traverses_cloisons_h)
+    .concat(traverses_cloisons_b)
     .concat(traverses_inter2_av.reduce((a,b) => a.concat(b), []))
     .concat(traverses_inter2_ar.reduce((a,b) => a.concat(b), []))
     .concat(traverses_cote_inter_caissons.reduce((a,b) => a.concat(b), []))
