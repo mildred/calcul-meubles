@@ -733,6 +733,7 @@
     display: flex;
     flex-direction: row;
     justify-content: center;
+    margin: 0.5em;
   }
   .meuble .colonne {
     display: flex;
@@ -740,12 +741,20 @@
     width: 2em;
   }
   .meuble .colonne .casier {
-    border: 1px solid #ddd;
+    border: 1px solid #eee;
     text-align: center;
   }
   .meuble .colonne .casier input[type=radio] {
     margin: 0.5em;
   }
+
+  .meuble .casier.panneau-haut           { border-top: 3px solid black; }
+  .meuble .casier.panneau-bas            { border-bottom: 3px solid black; }
+  .meuble .casier.panneau-gauche-partiel { border-left: 3px dotted black; }
+  .meuble .casier.panneau-droit-partiel  { border-right: 3px dotted black; }
+  .meuble .casier.panneau-gauche         { border-left: 3px solid black; }
+  .meuble .casier.panneau-droit          { border-right: 3px solid black; }
+  .meuble .casier.panneau-dos            { background-color: #ddd; }
 
   .prefs-casier {
     display: flex;
@@ -844,12 +853,36 @@
     <hr/>
 
     <div class="prefs-casier">
-      <div class="meuble">
+      <div class="meuble"
+        class:panneau-haut={opt.panneau_dessus}
+        class:panneau-bas={opt.panneau_dessous}>
         {#each opt.colonnes as colonne, i}
         <div class="colonne colonne-{i}">
           <!--<div>Colonne n°{i}</div>-->
           {#each colonne.casiers as casier, j}
-          <label class="casier casier-{i}-{j}" style="flex-grow: {casier.hauteur}">
+          <label
+            class="casier casier-{i}-{j}"
+            class:panneau-haut={  j == 0 ? opt.panneau_dessus :
+                                  opt.colonnes[i].casiers[j-1].panneau_dessous}
+            class:panneau-bas={   j < ui_colonnes[i].casiers.length-1 ?
+                                  opt.colonnes[i].casiers[j].panneau_dessous :
+                                  opt.panneau_dessous}
+            class:panneau-gauche={opt.montants[i].panneaux
+                                  .map((p,k) => p.droite != j || opt.montants[i].panneaux[k].actif)
+                                  .reduce((b, p) => b && p, true)}
+            class:panneau-droit={ opt.montants[i+1].panneaux
+                                  .map((p,k) => p.gauche != j || opt.montants[i+1].panneaux[k].actif)
+                                  .reduce((b, p) => b && p, true)}
+            class:panneau-gauche-partiel={
+                                  opt.montants[i].panneaux
+                                  .map((p,k) => p.droite == j && opt.montants[i].panneaux[k].actif)
+                                  .reduce((b, p) => b || p, false)}
+            class:panneau-droit-partiel={
+                                  opt.montants[i+1].panneaux
+                                  .map((p,k) => p.gauche == j && opt.montants[i+1].panneaux[k].actif)
+                                  .reduce((b, p) => b || p, false)}
+            class:panneau-dos={opt.colonnes[i].casiers[j].panneau_dos}
+            style="flex-grow: {casier.hauteur}">
             <!-- Casier n°{j} -->
             <input type="radio" name="selection-casier" value={`${i},${j}`} bind:group={selection_casier} />
           </label>
