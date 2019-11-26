@@ -3,6 +3,8 @@
   export let pieces = []
   export let merge = true
 
+  let separer = false
+
   $: pieces2 = pieces
     .map((p) => (
       (!p.piece) ? p : p.piece.update_new({
@@ -55,7 +57,7 @@
 <table>
   <caption>Liste de débit</caption>
   <tr>
-    <th>Pièce</th>
+    <th>Pièce (<label style="display: inline"><input bind:checked={separer} type=checkbox /> séparer</label>)</th>
     <th>Qué</th>
     <th>L x l x e</th>
     <th>Arrasement</th>
@@ -66,7 +68,16 @@
   </tr>
   {#each pieces3 as piece}
   <tr>
-    <td>{piece.name}</td>
+    <td>
+      {#if separer}
+        {#each piece.name_list as name, i}
+          {#if i != 0}<br/>{/if}
+          {name}
+        {/each}
+      {:else}
+        {piece.name}
+      {/if}
+    </td>
     <td>{piece.que || 1}</td>
     <td>{piece.string_dimentions()}</td>
     <td>{piece.string_arrasement()}</td>

@@ -174,7 +174,7 @@
             row: 0,
           }
         ]} />
-      <g transform="translate(20, 60) scale({zoom} {zoom})">
+      <g transform="translate(20, {60 + zoom*opt.hauteur}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="avant" />
         {/each}

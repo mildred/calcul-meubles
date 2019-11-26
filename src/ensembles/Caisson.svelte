@@ -1,5 +1,5 @@
 <script>
-  import { cleanObject, pipeline } from '../utils.js';
+  import { cleanObject, pipeline, nextId } from '../utils.js';
   import Component from '../Component.svelte';
   import Piece from '../pieces/piece.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
@@ -44,6 +44,7 @@
         porte: {},
         casiers: [
           {
+            tiroir: false,
             panneau_dessous: true,
             panneau_dos: true,
           },
@@ -99,10 +100,11 @@
     .map((colonne, i) => {
       return {
         ...colonne,
+        porte: {
+          ...colonne.porte,
+        },
         casiers: Array.from(Array(num_casiers_colonnes[i]).keys())
           .map(j => ({
-            //panneaux_dos: true,
-            //panneau_dessous: true,
             ...(colonne.casiers || [])[j],
           }))
       }
@@ -115,8 +117,9 @@
       m => m.concat([ui_montants[ui_montants.length-1]]))
     .map(montant => ({...montant, panneaux_actifs: [...(montant.panneaux_actifs||[])]}))
 
-  let selection_casier = '0,0'
-  $: [selection_casier_i, selection_casier_j] = selection_casier.split(',').map(n => parseInt(n))
+  let selection_casier_input = '0,0'
+  $: [selection_casier_i, selection_casier_j] = selection_casier_input.split(',').map(n => parseInt(n))
+  $: selection_casier = { i: selection_casier_i, j: selection_casier_j, key: selection_casier_input}
 
   //
   // Update opt from ui
@@ -169,6 +172,7 @@
         num_casiers: 1,
         casiers: [
           {
+            tiroir: false,
             panneau_dessous: true,
             panneau_dos: true,
           }
@@ -221,17 +225,21 @@
     for(let i = 0; i < cols; i++) {
       let num = num_casiers_colonnes[i]
       let ui_colonne = ui_colonnes[i]
+      let xpos = opt.epaisseur_montants * (i+1)
+        + opt.colonnes.slice(0, i).reduce((n, c) => n + c.largeur, 0)
       colonnes[i] = pipeline(
         opt.colonnes[i] || {},
         col => ({
           ...col,
+          xpos: xpos,
           porte: {
             ...col.porte,
             ...ui_colonne.porte,
           },
         }),
         col => {col.casiers = (col.casiers || []).slice(0, num); return col},
-        col => calculCasiers(i, col, hauteur_casiers_colonnes[i], num, ui_colonne))
+        col => calculCasiers(i, col, hauteur_casiers_colonnes[i], num, ui_colonne),
+        col => ({...col, casiers: calculPositionCasiers(col.casiers, xpos)}))
     }
 
     return {
@@ -255,6 +263,7 @@
         hauteur: null,
         panneau_dessous: true,
         panneau_dos: true,
+        tiroir: false,
         ...colonne.casiers[j],
         ...cleanObject(ui_casier),
       }
@@ -279,6 +288,16 @@
     return colonne
   }
 
+  function calculPositionCasiers(casiers, xpos){
+    for(let j = 0; j < casiers.length; j++) {
+      const jj = casiers.length - j - 1
+      casiers[j].xpos = xpos
+      casiers[j].ypos = opt.epaisseur_montants * (jj + 1)
+        + casiers.slice(j+1).reduce((n,c) => n + c.hauteur, 0)
+    }
+    return casiers
+  }
+
   function calculSubdivisionMontants(opt, ui_montants){
     let subdivisions_montants = Array.from(Array(opt.colonnes.length + 1).keys()).map((i) => {
       let ui_montant_panneaux_actifs = ((ui_montants[i] || {}).panneaux_actifs || [])
@@ -288,25 +307,29 @@
       }
       let casiers_g = (opt.colonnes[i-1] || {}).casiers || []
       let casiers_d = (opt.colonnes[i]   || {}).casiers || []
-      let hauteurs_g = casiers_g.slice(0, -1).map((caisson, j) => (
+      let hauteurs_g = casiers_g.slice(0, -1).map((casier, j) => (
         {
           gauche: [j, j+1],
-          [0]: opt.epaisseur_montants * (j+1)
-            + casiers_g.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
+          [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_montants),
+          'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_montants,
         }))
-      let hauteurs_d = casiers_d.slice(0, -1).map((caisson, j) => (
+      let hauteurs_d = casiers_d.slice(0, -1).map((casier, j) => (
         {
           droite: [j, j+1],
-          [0]: opt.epaisseur_montants * (j+1)
-            + casiers_d.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0)
+          [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_montants),
+          'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_montants,
         }))
-      //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
-      //console.log(`hauteurs_caisson_montants[${i}] opt.colonnes[${i}] =`, opt.colonnes[i])
-      //console.log(`hauteurs_caisson_montants[${i}] hauteurs_g =`, hauteurs_g)
-      //console.log(`hauteurs_caisson_montants[${i}] hauteurs_d =`, hauteurs_d)
-      let traverses = hauteurs_g.concat(hauteurs_d)
+      let hauteurs = hauteurs_g.concat(hauteurs_d)
         .sort((a,b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)
-        .map(h => ({...h, [1]: h[0] + opt.epaisseur_montants}))
+        .map(h => ({...h, [1]: h[0] + h.h}))
+      //console.log(`opt.montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
+      //console.log(`opt.montants[${i}] opt.colonnes[${i}] =`, opt.colonnes[i])
+      //console.log(`opt.montants[${i}] hauteurs_g =`, hauteurs_g)
+      //console.log(`opt.montants[${i}] hauteurs_g =`, hauteurs_g.map(h => h[0]))
+      //console.log(`opt.montants[${i}] hauteurs_d =`, hauteurs_d)
+      //console.log(`opt.montants[${i}] hauteurs_d =`, hauteurs_d.map(h => h[0]))
+      //console.log(`opt.montants[${i}] hauteurs =`, hauteurs)
+      let traverses = hauteurs
         .reduce((hh, h1) => {
           if (hh.length == 0) return [{
             gauche: [0, 0],
@@ -333,16 +356,16 @@
           y1: h[0] + (h[1] - h[0]) / 2 - opt.largeur_traverses / 2,
           y2: h[0] + (h[1] - h[0]) / 2 + opt.largeur_traverses / 2,
         }))
+      //console.log(`opt.montants[${i}].traverses =`, traverses)
       let ui_panneaux_actifs = Array.from(Array(traverses.length + 1).keys())
         .map(j => typeof(ui_montant.panneaux_actifs[j]) == 'boolean' ? ui_montant.panneaux_actifs[j] : null)
         .reduce((arr, x) => arr.concat([
           typeof(x) == 'boolean' ? x :
           arr.length == 0        ? true : arr[arr.length-1]]), [])
-      //console.log(`hauteurs_panneaux_montants[${i}] traverses =`, traverses)
       let panneaux = Array.from(Array(traverses.length + 1).keys()).map(j => {
         let first = (j == 0)
         let last  = (j >= traverses.length)
-        let cote  = (i == 0 || i == opt.colonnes.length)
+        let cote  = (i == 0 || i == opt.colonnes.length+1)
 
         return {
           first:  first,
@@ -550,11 +573,8 @@
                     + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
         opt.epaisseur_panneau)
       .put(
-        opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure
-          + opt.colonnes.slice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
-          + i * opt.epaisseur_montants,
-        opt.epaisseur_montants * (j+1) - opt.profondeur_rainure + opt.jeu_rainure
-          + col.casiers.slice(0, j).reduce((n, c) => n + c.hauteur, 0),
+        casier.xpos - opt.profondeur_rainure + opt.jeu_rainure,
+        casier.ypos - opt.profondeur_rainure + opt.jeu_rainure,
         0, 'yxz')))))
 
   $: montants_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (new Piece()
@@ -586,7 +606,7 @@
         .add_name(
           (i == 0)                  ? "coté gauche" :
           (i < opt.colonnes.length) ? `cloison n°${i}` : "coté droit")
-        .add_name(`caisson n°${j+1}`)
+        .add_name(`traverse n°${j+1}`)
         .put(
           opt.epaisseur_montants * (i)
             + opt.colonnes.slice(0, i).reduce((n, c) => n+c.largeur, 0),
@@ -638,17 +658,14 @@
     .put(null, opt.hauteur - opt.epaisseur_montants - t.largeur)))
 
   $: traverses_inter2_av_ar = opt.colonnes.map((col, i) => (
-    col.casiers.map((caisson, j) => (j == 0) ? null : (
+    col.casiers.map((casier, j) => (j == col.casiers.length-1) ? null : (
       new Piece()
         .add_name("Traverse", "intermédiaire")
         .build(col.largeur, opt.largeur_traverses, opt.epaisseur_montants)
         .ajout_tenons(opt.profondeur_tenons)
         .put(
-          opt.epaisseur_montants * (i+1)
-            + opt.colonnes.slice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
-            - opt.profondeur_tenons,
-          opt.epaisseur_montants * j
-            + col.casiers.slice(0, j).reduce((n, c) => n + c.hauteur, 0),
+          casier.xpos - opt.profondeur_tenons,
+          casier.ypos - opt.epaisseur_montants,
           null,
           'xzy')
     ))
@@ -669,9 +686,9 @@
   ))
 
   $: panneau_inter2_dessous = opt.colonnes.map((col, i) => (
-    col.casiers.map((caisson, j) =>
+    col.casiers.map((casier, j) =>
       (j == col.casiers.length-1) ? null :
-      (caisson.panneau_dessous === false) ? null :
+      (casier.panneau_dessous === false) ? null :
       (new Piece()
         .add_name("Panneau", "dessous", `colonne n°${i+1}`, `casier n°${j+1}`)
         .build(
@@ -682,11 +699,8 @@
             + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
           opt.epaisseur_panneau)
         .put(
-          opt.epaisseur_montants * (i+1)
-            + opt.colonnes.slice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
-            - opt.profondeur_rainure + opt.jeu_rainure,
-          opt.epaisseur_montants * (j+1)
-            + col.casiers.slice(0, j+1).reduce((n, c) => n + c.hauteur, 0),
+          casier.xpos - opt.profondeur_rainure + opt.jeu_rainure,
+          casier.ypos - opt.epaisseur_panneau,
           opt.largeur_traverses
             - opt.profondeur_rainure + opt.jeu_rainure,
           'xzy')
@@ -801,17 +815,17 @@
     <svg
         width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
         height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
-      <g transform="translate(5, 5) scale({zoom} {zoom})">
+      <g transform="translate(5, {5 + zoom*opt.hauteur}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="xy" />
         {/each}
       </g>
-      <g transform="translate({5 + zoom*opt.largeur + 10}, 5) scale({zoom} {zoom})">
+      <g transform="translate({5 + zoom*opt.largeur + 10}, {5 + zoom*opt.hauteur}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="zy" />
         {/each}
       </g>
-      <g transform="translate(5, {5 + zoom*(opt.hauteur) + 5}) scale({zoom} {zoom})">
+      <g transform="translate(5, {5 + zoom*(opt.hauteur+opt.profondeur) + 5}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="xz" />
         {/each}
@@ -910,9 +924,10 @@
                                   .map((p,k) => p.gauche == j && opt.montants[i+1].panneaux[k].actif)
                                   .reduce((b, p) => b || p, false)}
             class:panneau-dos={opt.colonnes[i].casiers[j].panneau_dos}
+            class:tiroir={opt.colonnes[i].casiers[j].tiroir}
             style="flex-grow: {casier.hauteur}">
             <!-- Casier n°{j} -->
-            <input type="radio" name="selection-casier" value={`${i},${j}`} bind:group={selection_casier} />
+            <input type="radio" name="selection-casier" value={`${i},${j}`} bind:group={selection_casier_input} />
           </label>
           {/each}
         </div>
@@ -920,6 +935,7 @@
       </div>
 
       <div>
+        {#each [selection_casier] as sel (sel.key)}
         <p><strong>Colonne n°{selection_casier_i+1}</strong></p>
         <fieldset>
           <legend>Porte colonne n°{selection_casier_i+1}</legend>
@@ -933,15 +949,21 @@
             </InputSelect>
           </label>
         </fieldset>
+        {/each}
       </div>
 
       <div>
+        {#each [selection_casier] as sel (sel.key)}
         <p><strong>Casier n° {selection_casier_j+1}</strong></p>
         <p>
           <!--
           <label><InputCheckbox checked={true} /> panneau gauche</label>
           <label><InputCheckbox checked={true} /> panneau droit</label>
           -->
+          <label><InputCheckbox tristate={false}
+            def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
+            bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
+            /> tiroir</label>
           {#if selection_casier_j == 0}
           <label><InputCheckbox tristate={false}
             def={opt.panneau_dessus}
@@ -990,6 +1012,7 @@
             <label><InputCheckbox tristate={false} /> Porte casier</label>
           </legend>
         </fieldset>
+        {/each}
       </div>
     </div>
 

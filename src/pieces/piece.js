@@ -57,6 +57,10 @@ export default class Piece {
     return this.names.join(' ')
   }
 
+  get name_list(){
+    return (this.names_list || [this.names]).map(n => n.join(' '))
+  }
+
   set_name() {
     return this.update_new({
       ...this,
@@ -165,7 +169,7 @@ export default class Piece {
     pos = get_position(pos)
     let [x, dx] = this.dim(pos[0])
     let [y, dy] = this.dim(pos[1])
-    return [x, y, dx, dy]
+    return [x, -y, dx, -dy]
   }
 
   projection_polyline(pos){
@@ -211,7 +215,7 @@ export default class Piece {
       [x+t1x,     y+dy1],
       // fermeture de la figure
       [x+t1x,     y+t1y],
-    ]
+    ].map(c => [c[0], -c[1]])
   }
 
   string_arrasement(){
@@ -246,7 +250,7 @@ export default class Piece {
     return JSON.stringify(
       Object.keys(this)
         .sort()
-        .filter(k => (! ['names', 'x', 'y', 'z', 'orient', 'que'].includes(k)))
+        .filter(k => (! ['names', 'names_list', 'x', 'y', 'z', 'orient', 'que'].includes(k)))
         .map(k => [k, this[k]])
         .reduce((a, b) => a.concat(b), []))
   }
@@ -256,6 +260,7 @@ export default class Piece {
     return this.update_new({
       ...this,
       que:   (this.que || 1) + (other.que || 1),
+      names_list: [...(this.names_list||[this.names]), other.names],
       names: this.names
         .filter((n) => other.names.includes(n))
         .concat(this.names.filter((n) => !other.names.includes(n) && !other.names.includes(`(${n})`)).map(x => x[0] == '(' ? x : `(${x})`))
