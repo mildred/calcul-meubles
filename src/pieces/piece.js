@@ -37,6 +37,10 @@ export default class Piece {
     this.que        = 1
   }
 
+  update(props) {
+    return this.update_new({...this, props})
+  }
+
   update_new(props) {
     return Object.assign(Object.create(Piece.prototype), props)
   }
@@ -78,10 +82,10 @@ export default class Piece {
   build(longueur, largeur, epaisseur) {
     return this.update_new({
       ...this,
-      arrasement:      longueur,
-      longueur:        longueur,
-      largeur:         largeur,
-      epaisseur:       epaisseur,
+      arrasement:      longueur || this.arrasement,
+      longueur:        longueur || this.longueur,
+      largeur:         largeur || this.largeur,
+      epaisseur:       epaisseur || this.epaisseur,
     })
   }
 

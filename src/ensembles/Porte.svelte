@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { cleanObject } from '../utils.js';
+  import { cleanObject, pipeline } from '../utils.js';
   import InputNumber from '../controls/InputNumber.svelte';
   import InputCheckbox from '../controls/InputCheckbox.svelte';
   import Component from '../Component.svelte';
@@ -33,7 +33,17 @@
   let opt = { ...initdata.opt }
   let ui  = { ...(initdata.ui || initdata.opt) }
 
-  $: opt      = {...defaults, ...cleanObject(ui)}
+  $: opt = pipeline(
+    {
+      ...defaults,
+      ...cleanObject(ui)
+    },
+    opt => ({
+      largeur_traverse_h: opt.largeur_traverses,
+      largeur_traverse_b: opt.largeur_traverses,
+      ...opt
+    }))
+
   $: data.opt = opt
   $: data.ui  = ui
 
@@ -54,13 +64,13 @@
       .add_name("Traverse")
       .build(
         opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil),
-        opt.largeur_traverses,
+        0,
         opt.epaisseur):
     (opt.type == 'tenon-mortaise') ? new Piece()
       .add_name("Traverse")
       .build(
         opt.largeur - 2 * opt.largeur_montants,
-        opt.largeur_traverses,
+        0,
         opt.epaisseur)
       .ajout_tenons(opt.profondeur_tenons):
     new Piece();
@@ -70,26 +80,30 @@
     0;
   $: traverse_h = traverse
     .add_name("haut")
-    .put(traverse_xpos, 0, 0, 'xyz')
+    .build(null, opt.largeur_traverse_h)
+    .put(traverse_xpos, opt.hauteur-opt.largeur_traverse_h, 0, 'xyz')
   $: traverse_b = traverse
     .add_name("bas")
-    .put(traverse_xpos, opt.hauteur-traverse.largeur, 0, 'xyz')
+    .build(null, opt.largeur_traverse_b)
+    .put(traverse_xpos, 0, 0, 'xyz')
   $: panneau = (
     (opt.type == 'contre-profil')  ? new Piece()
       .build(
         opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-        opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.hauteur + 2 * (opt.profondeur_rainure - opt.jeu_rainure)
+          - opt.largeur_traverse_h - opt.largeur_traverse_b,
         opt.epaisseur_panneau):
     (opt.type == 'tenon-mortaise') ? new Piece()
       .build(
         opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
-        opt.hauteur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.hauteur + 2 * (opt.profondeur_rainure - opt.jeu_rainure)
+          - opt.largeur_traverse_h - opt.largeur_traverse_b,
         opt.epaisseur_panneau):
     new Piece())
     .add_name("Panneau")
     .put(
       montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
-      traverse.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+      traverse_b.largeur - opt.profondeur_rainure + opt.jeu_rainure,
       0,
       'xyz')
 
@@ -196,6 +210,8 @@
     <hr/>
     <label><span>Largeur montants : </span><InputNumber min=0 bind:value={ui.largeur_montants} def={defaults.largeur_montants}/> mm</label>
     <label><span>largeur traverses : </span><InputNumber min=0 bind:value={ui.largeur_traverses} def={defaults.largeur_traverses}/> mm</label>
+    <label><span>largeur traverse haut : </span><InputNumber min=0 bind:value={ui.largeur_traverse_h} def={opt.largeur_traverses}/> mm</label>
+    <label><span>largeur traverse bas : </span><InputNumber min=0 bind:value={ui.largeur_traverse_b} def={opt.largeur_traverses}/> mm</label>
     <hr/>
     <label><span>Épaisseur panneau : </span><InputNumber min=0 bind:value={ui.epaisseur_panneau} def={defaults.epaisseur_panneau}/> mm</label>
     <label><span>Profondeur rainures : </span><InputNumber min=0 bind:value={ui.profondeur_rainure} def={defaults.profondeur_rainure}/> mm</label>
