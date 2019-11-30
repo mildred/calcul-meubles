@@ -126,7 +126,7 @@
   </div>
 
   <div class="main">
-    <Ensemble name="Meuble" initdata={data} on:datachange={(e) => {data = e.detail}} />
+    <Ensemble name="Meuble" initdata={data} on:datachange={(e) => {data = e.detail.data}} />
     <pre id="json">{JSON.stringify(data, null, 2)}</pre>
   </div>
 </div>

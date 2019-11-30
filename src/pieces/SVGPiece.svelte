@@ -4,7 +4,6 @@
 
   let polyline
 
-  $: [x, y, dx, dy] = piece.projection(pos)
   $: polyline = piece.projection_polyline(pos).map(co => co.join(',')).join(' ')
 </script>
 <style>
@@ -16,5 +15,4 @@
   }
 </style>
 
-<!--<rect class="outline" x={x} y={y} width={dx} height={dy} />-->
 <polyline class="outline" points={polyline} fill=none stroke=black data-name={piece.name} />

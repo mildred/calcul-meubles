@@ -5,11 +5,13 @@
   let components = getContext('App-components')
 
   export let data
+  export let state = {}
+  export let childrenState = []
   export let path = `${getContext('Component-path')}-${data.id}`
 
   setContext('Component-path', path)
 
-  $: dispatch('datachange', data)
+  $: dispatch('datachange', {data, state})
 
   function renameChild(i){
     let name = prompt(`Renommer "${data.children[i].name}" en :`, data.children[i].name) || data.children[i].name
@@ -21,6 +23,12 @@
     let children = [...data.children]
     children.splice(i, 1)
     data.children = children
+  }
+
+  function onDataChange(e, i){
+    console.log(`${data.type}(${path}).datachange[${i}] = %o`, e.detail);
+    data.children[i] = e.detail.data
+    childrenState[i] = e.detail.state
   }
 
   function onHashChange(){
@@ -69,7 +77,7 @@
   <svelte:component
     this={components[child.type]}
     initdata={child}
-    on:datachange={(e) => {console.log(`${data.type}(${path}).datachange[${i}] = %o`, e.detail); data.children[i] = e.detail}}
+    on:datachange={e => onDataChange(e, i)}
     path="{path}-{child.id}" />
 {/each}
 {/if}

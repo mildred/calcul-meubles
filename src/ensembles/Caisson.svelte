@@ -2,7 +2,7 @@
   import { cleanObject, pipeline, nextId } from '../utils.js';
   import Component from '../Component.svelte';
   import Piece from '../pieces/piece.js';
-  import SVGPiece from '../pieces/SVGPiece.svelte';
+  import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
   import InputCheckbox from '../controls/InputCheckbox.svelte';
   import InputNumber from '../controls/InputNumber.svelte';
@@ -55,7 +55,15 @@
   }
 
   //
-  // Option (internal state)
+  // Internal state (recomputed)
+  //
+
+  let state = {}
+
+  let childrenState = []
+
+  //
+  // Option (internal state, saved)
   //
 
   let opt = { ...defaults, ...initdata.opt }
@@ -79,7 +87,6 @@
     ...(initdata.ui || initdata.opt),
   }
 
-  let zoom = 0.5
   let num_colonnes = Math.max(opt.colonnes.length, 1)
 
   let largeur_colonnes = opt.colonnes.map(c => (c.largeur_definie ? c.largeur : null))
@@ -726,6 +733,8 @@
     .concat(panneau_inter2_dessous.reduce((a,b) => a.concat(b), []))
     .filter(x => x)
 
+  $: state.pieces = pieces
+
   $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
   $: nombre_pieces = pieces.length
   $: pieces_par_epaisseur = pieces
@@ -804,33 +813,14 @@
   }
 </style>
 
-<Component bind:data={data} path={path} on:datachange>
+<Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} on:datachange>
   <div class="main">
 
     <h1>Calcul d'un caisson</h1>
     <h2>Caisson {data.name}</h2>
 
     <div style="float: left">
-    <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
-    <svg
-        width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
-        height="{5 + zoom*opt.hauteur + 5 + zoom*opt.profondeur + 5}">
-      <g transform="translate(5, {5 + zoom*opt.hauteur}) scale({zoom} {zoom})">
-        {#each pieces as piece}
-          <SVGPiece piece={piece} pos="xy" />
-        {/each}
-      </g>
-      <g transform="translate({5 + zoom*opt.largeur + 10}, {5 + zoom*opt.hauteur}) scale({zoom} {zoom})">
-        {#each pieces as piece}
-          <SVGPiece piece={piece} pos="zy" />
-        {/each}
-      </g>
-      <g transform="translate(5, {5 + zoom*(opt.hauteur+opt.profondeur) + 5}) scale({zoom} {zoom})">
-        {#each pieces as piece}
-          <SVGPiece piece={piece} pos="xz" />
-        {/each}
-      </g>
-    </svg>
+      <SVGDrawing pieces={pieces} />
     </div>
 
     <form style="float: left">

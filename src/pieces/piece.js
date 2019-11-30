@@ -1,30 +1,9 @@
-
-function get_position(pos){
-  switch(pos){
-    case 'left':   case 'l': case 'gauche':  case 'ga': case 'zy': case 'x': return 'zy';
-    case 'right':  case 'r': case 'droite':  case 'dr': case 'Zy': case 'X': return 'Zy';
-    case 'top':    case 't': case 'haut':    case 'h':  case 'xZ': case 'y': return 'xZ';
-    case 'bottom': case 'b': case 'bas':                case 'xz': case 'Y': return 'xz';
-    case 'front':  case 'F': case 'avant':   case 'av': case 'xy': case 'z': return 'xy';
-    case 'back':   case 'B': case 'arrière': case 'ar': case 'Xy': case 'Z': return 'Xy';
-    default: throw `Unknown position ${pos}`
-  }
-}
-
-function get_orient(orient){
-  switch(orient){
-    case 'xyz': case 'xzy':
-    case 'yxz': case 'yzx':
-    case 'zxy': case 'zyx':
-      return orient
-    default:
-      throw `Unknown orient ${orient}`
-  }
-}
+import { get_position, get_orient } from './utils.js';
 
 export default class Piece {
 
   constructor() {
+    this.type       = 'Piece'
     this.longueur   = 0
     this.largeur    = 0
     this.epaisseur  = 0
@@ -155,7 +134,7 @@ export default class Piece {
   // dim1 := 'longueur' | 'arrasement' | 'longueur_tenon1' | 'longueur_tenon2' | 0
   // dim2 := 'largeur' | 0
   // dim3 := 'epaisseur' | 0
-  // returns [translation, dimension]
+  // returns [translation, dimension] (negated if axis is uppercase)
   dim(axis, dim1, dim2, dim3){
     dim1 = dim1 == undefined ? 'longueur'  : dim1
     dim2 = dim2 == undefined ? 'largeur'   : dim2
@@ -169,11 +148,17 @@ export default class Piece {
     return [sign*this[axis], sign*dims[this.orient.indexOf(axis)]]
   }
 
-  projection(pos){
-    pos = get_position(pos)
-    let [x, dx] = this.dim(pos[0])
-    let [y, dy] = this.dim(pos[1])
-    return [x, -y, dx, -dy]
+  bounding_box(){
+    let [xmin, dx] = this.dim('x')
+    let [ymin, dy] = this.dim('y')
+    let [zmin, dz] = this.dim('z')
+    return {
+      dx, dy, dz,
+      xmin, ymin, zmin,
+      xmax: xmin + dx,
+      ymax: ymin + dy,
+      zmax: zmin + dz,
+    }
   }
 
   projection_polyline(pos){
