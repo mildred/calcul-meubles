@@ -24,7 +24,11 @@ export default class Group {
   }
 
   position(x, y, z){
-    return this.update({'x': x, 'y': y, 'z': z})
+    return this.update({
+      'x': (x || x == 0) ? x : this.x,
+      'y': (y || y == 0) ? y : this.y,
+      'z': (z || z == 0) ? z : this.z,
+    })
   }
 
   bounding_box(){
@@ -61,6 +65,6 @@ export default class Group {
 
   projection_position(pos){
     pos = get_position(pos)
-    return [this.dim(pos[0]), this.dim(pos[1])]
+    return [this.dim(pos[0]), -this.dim(pos[1])]
   }
 }

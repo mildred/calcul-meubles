@@ -31,6 +31,8 @@
 
   let pieces = []
 
+  let zoom = 0.5;
+
   $: pieces = childrenState
     .map((c, i) => new Group(c.pieces, `${children[i].type} ${children[i].name}`))
     .map((g, i) => {
@@ -40,6 +42,15 @@
       }
       return g.position(x, y, z)
     })
+
+  $: pieces_drawings = pieces
+    .reduce((res, p, i) => {
+      let d = {d: 1, ...childrenPos[i]}.d || 1;
+      res[d-1] = [...(res[d-1] || []), p];
+      return res;
+    }, [])
+
+  $: console.log(pieces_drawings)
 
   function add(type){
     let id = nextId(children)
@@ -61,9 +72,12 @@
   <h1>Sous-ensemble</h1>
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
 
-  <div data-count={pieces.length}>
-    <SVGDrawing pieces={pieces} />
-  </div>
+  {#each pieces_drawings as pieces_d, i}
+    <div data-count={pieces.length}>
+      <p>Dessin {i+1}</p>
+      <SVGDrawing bind:zoom={zoom} pieces={pieces_d || []} />
+    </div>
+  {/each}
 
   {#if children.length > 0 }
   <table>
@@ -72,6 +86,7 @@
       <th style="text-align: right">de la gauche</th>
       <th style="text-align: right">du bas</th>
       <th style="text-align: right">du mur</th>
+      <th style="text-align: right">n° dessin</th>
       <td></td>
     </tr>
   {#each children as child, i}
@@ -81,6 +96,7 @@
       <td><InputNumber bind:value={childrenPos[i].x} def={0} /></td>
       <td><InputNumber bind:value={childrenPos[i].y} def={0} /></td>
       <td><InputNumber bind:value={childrenPos[i].z} def={0} /></td>
+      <td><InputNumber bind:value={childrenPos[i].d} def={1} min={1} /></td>
       <td>mm</td>
     </tr>
     {/if}
