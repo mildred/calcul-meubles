@@ -24,9 +24,7 @@ export default class Group {
   }
 
   position(x, y, z){
-    let res = this.update({'x': x, 'y': y, 'z': z})
-    console.log("group", res, {'x': x, 'y': y, 'z': z})
-    return res
+    return this.update({'x': x, 'y': y, 'z': z})
   }
 
   bounding_box(){
@@ -42,14 +40,14 @@ export default class Group {
       .map(p => p.bounding_box())
       .reduce((bounds, piece) => bounds === null ? piece : (
         Object.keys(keys).reduce((res, key) => ({...res, [key]: keys[key](bounds[key], piece[key])}), {})
-      ), null)
+      ), null) || {}
     return {
-      xmin: this.x + res.xmin,
-      xmax: this.x + res.xmax,
-      ymin: this.y + res.ymin,
-      ymax: this.y + res.ymax,
-      zmin: this.z + res.zmin,
-      zmax: this.z + res.zmax,
+      xmin: this.x + (res.xmin || 0),
+      xmax: this.x + (res.xmax || 0),
+      ymin: this.y + (res.ymin || 0),
+      ymax: this.y + (res.ymax || 0),
+      zmin: this.z + (res.zmin || 0),
+      zmax: this.z + (res.zmax || 0),
     }
   }
 

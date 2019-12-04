@@ -11,6 +11,7 @@
 
   setContext('Component-path', path)
 
+  dispatch('datachange', {data, state})
   $: dispatch('datachange', {data, state})
 
   function renameChild(i){

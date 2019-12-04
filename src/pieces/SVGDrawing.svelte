@@ -12,6 +12,7 @@
 
 <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
 <svg
+    data-count={pieces.length}
     width="{5 + zoom*xmax + 5 + zoom*zmax + 5}"
     height="{5 + zoom*ymax + 5 + zoom*zmax + 5}">
   <g transform="translate(5, {5 + zoom*ymax}) scale({zoom} {zoom})">

@@ -61,7 +61,7 @@
   <h1>Sous-ensemble</h1>
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
 
-  <div>
+  <div data-count={pieces.length}>
     <SVGDrawing pieces={pieces} />
   </div>
 
