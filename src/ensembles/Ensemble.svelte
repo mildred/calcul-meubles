@@ -4,6 +4,7 @@
   import { nextId } from '../utils.js';
   import Component from '../Component.svelte';
   import InputNumber from '../controls/InputNumber.svelte';
+  import InputCheckbox from '../controls/InputCheckbox.svelte';
 
   export let name = null
   export let path = '0'
@@ -24,7 +25,7 @@
   let children = data.children
 
   $: childrenPos = children
-    .map((_,i) => ({x: 0, y: 0, z: 0, ...childrenPos[i]}))
+    .map((_,i) => ({x: 0, y: 0, z: 0, d: 1, show: true, ...childrenPos[i]}))
 
   $: data.childrenPos = childrenPos
   $: data.children = children
@@ -45,8 +46,9 @@
 
   $: pieces_drawings = pieces
     .reduce((res, p, i) => {
-      let d = {d: 1, ...childrenPos[i]}.d || 1;
-      res[d-1] = [...(res[d-1] || []), p];
+      let pos = {d: 1, show: true, ...childrenPos[i]}
+      let d = pos.d || 1;
+      if(pos.show) res[d-1] = [...(res[d-1] || []), p];
       return res;
     }, [])
 
@@ -82,7 +84,8 @@
   {#if children.length > 0 }
   <table>
     <tr>
-      <th style="text-align: left">Positions des éléments</th>
+      <th style="text-align: left">Éléments</th>
+      <th style="text-align: right">dimensions (L&nbsp;x&nbsp;h&nbsp;x&nbsp;p)</th>
       <th style="text-align: right">de la gauche</th>
       <th style="text-align: right">du bas</th>
       <th style="text-align: right">du mur</th>
@@ -93,10 +96,11 @@
     {#if child.type}
     <tr>
       <td>{child.type} {child.name}</td>
+      <td style="text-align: right">{(pieces[i]||{}).largeur}x{(pieces[i]||{}).hauteur}x{(pieces[i]||{}).profondeur}</td>
       <td><InputNumber bind:value={childrenPos[i].x} def={0} /></td>
       <td><InputNumber bind:value={childrenPos[i].y} def={0} /></td>
       <td><InputNumber bind:value={childrenPos[i].z} def={0} /></td>
-      <td><InputNumber bind:value={childrenPos[i].d} def={1} min={1} /></td>
+      <td><InputCheckbox tristate={false} bind:checked={childrenPos[i].show} /><InputNumber bind:value={childrenPos[i].d} def={1} min={1} /></td>
       <td>mm</td>
     </tr>
     {/if}

@@ -31,6 +31,21 @@ export default class Group {
     })
   }
 
+  get largeur() {
+    let bb = this.bounding_box()
+    return bb.xmax - bb.xmin
+  }
+
+  get hauteur() {
+    let bb = this.bounding_box()
+    return bb.ymax - bb.ymin
+  }
+
+  get profondeur() {
+    let bb = this.bounding_box()
+    return bb.zmax - bb.zmin
+  }
+
   bounding_box(){
     let keys = {
       xmin: Math.min,
