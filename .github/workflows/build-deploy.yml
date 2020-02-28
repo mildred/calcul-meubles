@@ -30,7 +30,7 @@ jobs:
         CI: true
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
-      if: success() && github.ref == 'master' && matrix.node-version == '12.x'
+      #if: success() && github.ref == 'master' && matrix.node-version == '12.x'
       with:
         publish_dir: ./public
         deploy_key: ${{ secrets.DEPLOY_KEY }}
