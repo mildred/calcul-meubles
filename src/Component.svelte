@@ -23,6 +23,7 @@
     if(!confirm(`Supprimer ${data.children[i].name} ?`)) return
     let children = [...data.children]
     children.splice(i, 1)
+    console.log("delete", i, data.children, children)
     data.children = children
   }
 
@@ -35,7 +36,8 @@
   function onHashChange(){
     Array.from(document.querySelectorAll('.target')).map(x => x.classList.remove('target'))
     Array.from(document.querySelectorAll(':target')).map(x => x.classList.add('target'))
-    Array.from(document.querySelectorAll(window.location.hash)).map(x => x.classList.add('target'))
+    if(window.location.hash != "")
+      Array.from(document.querySelectorAll(window.location.hash)).map(x => x.classList.add('target'))
   }
 
   window.addEventListener("hashchange", onHashChange, false);
@@ -54,7 +56,8 @@
 <div class="component" id="component-{path}">
   <slot></slot>
 
-  <!-- <pre>data.children = {JSON.stringify(data.children, null, 2)}</pre> -->
+  <!-- data.children is empty if this is not there: -->
+  <pre style="display: none">data.children = {JSON.stringify(data.children, null, 2)}</pre>
 
   {#if data.children && data.children.length}
   <ul>
