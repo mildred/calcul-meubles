@@ -15,6 +15,7 @@
   let data = {...initdata}
 
   let defaults = {
+    quantite: 1,
     type:  'contre-profil',
     largeur: 400,
     hauteur: 600,
@@ -111,17 +112,17 @@
     opt.inclure_panneau ? panneau : null,
     traverse_h, traverse_b,
     montant_g, montant_d,
-  ].filter(x => x != null)
+  ].filter(x => x != null).map(p => p.multiply_que(opt.quantite))
 
-  $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
-  $: nombre_pieces = pieces.length
+  $: nombre_tenons = pieces.reduce((n, p) => n + p.que * p.nombre_tenons, 0)
+  $: nombre_pieces = pieces.reduce((n, p) => n + p.que, 0)
   $: pieces_par_epaisseur = pieces
     .reduce((h, p) => ({...h, [p.epaisseur]: [...(h[p.epaisseur]||[]), p]}), {})
   $: stats_epaisseur = Object.keys(pieces_par_epaisseur)
     .map((epaisseur) => ({
       epaisseur: epaisseur,
-      nombre: pieces_par_epaisseur[epaisseur].length,
-      surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.surface(), 0)
+      nombre: pieces_par_epaisseur[epaisseur].reduce((n,p) => n + p.que, 0),
+      surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.que * p.surface(), 0)
     }))
 </script>
 
@@ -197,6 +198,7 @@
     </div>
 
     <form style="float: left">
+    <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
     <label>
       <span>Type : </span>
       <select bind:value={ui.type}>

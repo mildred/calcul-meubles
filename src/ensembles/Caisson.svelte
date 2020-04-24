@@ -953,7 +953,7 @@
           <label><InputCheckbox tristate={false}
             def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
             bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
-            /> tiroir</label>
+            /> tiroir (pour décaler les traverses)</label>
           {#if selection_casier_j == 0}
           <label><InputCheckbox tristate={false}
             def={opt.panneau_dessus}

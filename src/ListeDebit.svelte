@@ -5,15 +5,17 @@
 
   let separer = false
 
+  // Pièces, tableau non fusionné
   $: pieces2 = pieces
     .map((p) => (
       (!p.piece) ? p : p.piece.update_new({
         ...p.piece,
         names: p.nom ? p.nom.split(' ') : p.piece.names,
-        que: p.que || p.piece.que || 1,
+        que: quantite * (p.que || p.piece.que || 1),
       })
     ))
 
+  // Pièces, tableau fusionné si merge == true
   $: pieces3 = !merge ? pieces2 :
     Object.values(pieces2.reduce((map, p) => (map[p.signature()] = [...(map[p.signature()] || []), p], map), {}))
     .map(family => (

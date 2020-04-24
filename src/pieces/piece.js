@@ -58,6 +58,13 @@ export default class Piece {
     })
   }
 
+  multiply_que(que){
+    return this.update_new({
+      ...this,
+      que: this.que * que
+    })
+  }
+
   build(longueur, largeur, epaisseur) {
     return this.update_new({
       ...this,
