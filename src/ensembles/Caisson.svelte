@@ -1024,18 +1024,26 @@
     </form>
 
     <hr class="clear"/>
-    <dl>
-      <dt>Nombre de tenons</dt>
-      <dd>{nombre_tenons}</dd>
-      <dt>Nombre de pièces</dt>
-      <dd>{nombre_pieces}</dd>
+    <table>
+      <tr>
+        <td>Nombre de tenons</td>
+        <td>{nombre_tenons}</td>
+      </tr>
+      <tr>
+        <td>Nombre de pièces</td>
+        <td>{nombre_pieces}</td>
+      </tr>
       {#each stats_epaisseur as p}
-      <dt>Nombre de pièces e={p.epaisseur}</dt>
-      <dd>{p.nombre}</dd>
-      <dt>Surface des pièces e={p.epaisseur}</dt>
-      <dd>{p.surface}</dd>
+      <tr>
+        <td>Nombre de pièces e={p.epaisseur}</td>
+        <td>{p.nombre}</td>
+      </tr>
+      <tr>
+        <td>Surface des pièces e={p.epaisseur}</td>
+        <td>{p.surface}</td>
+      </tr>
       {/each}
-    </dl>
+    </table>
     <ListeDebit pieces={pieces} />
   </div>
 </Component>
