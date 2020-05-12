@@ -52,7 +52,7 @@
       return res;
     }, [])
 
-  $: console.log(pieces_drawings)
+  //$: console.log(pieces_drawings)
 
   function add(type){
     let id = nextId(children)
@@ -111,6 +111,7 @@
   <button on:click={e => add('Porte')}>Nouvelle porte</button>
   <button on:click={e => add('Caisson')}>Nouveau caisson</button>
   <button on:click={e => add('Etagere')}>Nouvelle étagère</button>
+  <button on:click={e => add('Facade')}>Nouvelle façade</button>
   <button on:click={e => add('Ensemble')}>Nouveau sous-ensemble</button>
 </Component>
 

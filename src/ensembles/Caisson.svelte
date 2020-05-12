@@ -112,6 +112,7 @@
         },
         casiers: Array.from(Array(num_casiers_colonnes[i]).keys())
           .map(j => ({
+            porte: {},
             ...(colonne.casiers || [])[j],
           }))
       }
@@ -273,6 +274,12 @@
         tiroir: false,
         ...colonne.casiers[j],
         ...cleanObject(ui_casier),
+        porte: {
+          facade: false,
+          type: "",
+          ...(colonne.casiers[j] || {}).porte,
+          ...cleanObject(ui_casier.porte || {}),
+        },
       }
       //console.log(`fusion casier ${i+1},${j+1} = `, casier)
       if(hauteurs[j] && hauteurs[j] != 0) {
@@ -413,18 +420,103 @@
       if(!children[i].source) children[i].source = ['Porte', 'colonne', i]
     }
 
-    // Create new
+    // Create new, remove old
     for(let i = 0; i < opt.colonnes.length; i++){
       const colonne = opt.colonnes[i]
+      children = creePorteColonne(colonne, i, children)
+
+      for(let j = 0; j < colonne.casiers.length; j++) {
+        const casier = colonne.casiers[j]
+        children = creePorteCasier(colonne, i, casier, j, children)
+      }
+    }
+
+    // Update values
+    for(let i = 0; i < children.length; i++){
+      const source = children[i].source
+      let type
+
+      switch(source[0]) {
+        default: break
+        case 'Porte':
+          type = 'Porte'
+          break
+        case 'Facade':
+          type = 'Facade'
+          break
+      }
+
+      let defaults
+
+      switch(source[1]){
+        default: break
+
+        case 'col':
+        case 'colonne':
+          const col = opt.colonnes[source[2]]
+          switch(source[3]){
+            case 'cas':
+            case 'casier':
+              const cas = col.casiers[source[4]]
+              defaults = {
+                force_largeur: true,
+                force_hauteur: true,
+                largeur:
+                  (cas.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
+                  (cas.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
+                  (cas.porte.type == 'encastre') ? col.largeur
+                                                 : 0,
+                hauteur:
+                  (cas.porte.type == 'total')    ? cas.hauteur + 2 * opt.epaisseur_montants :
+                  (cas.porte.type == 'demi')     ? cas.hauteur + opt.epaisseur_montants :
+                  (cas.porte.type == 'encastre') ? cas.hauteur
+                                                 : 0,
+              }
+              console.log("Calcul porte casier", col, cas, defaults)
+              break
+            default:
+              defaults = {
+                force_largeur: true,
+                force_hauteur: true,
+                largeur:
+                  (col.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
+                  (col.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
+                  (col.porte.type == 'encastre') ? col.largeur
+                                                 : 0,
+                hauteur:
+                  (col.porte.type == 'total')    ? opt.hauteur :
+                  (col.porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
+                  (col.porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants
+                                                 : 0,
+              }
+              break
+          }
+          break
+      }
+
+      children[i] = {
+        name: `n°${i+1}`,
+        ...children[i],
+        type: type,
+        defaults: defaults,
+      }
+    }
+
+    return {
+      ...data,
+      children: children,
+    }
+
+    function creePorteColonne(colonne, i, children){
       const child_idx = children.findIndex(c => c.source.join('-') == `Porte-colonne-${i}`)
       if (!colonne.porte.type) {
         // Pas de porte
         if (child_idx != -1 && confirm(`Supprimer la porte ${children[child_idx].name} ?`)) {
           children.splice(child_idx, 1)
         }
-        continue
+        return children
       }
-      if (child_idx != -1) continue; // Porte trouvée
+      if (child_idx != -1) return children; // Porte trouvée
 
       children = [...children, {
         source: ['Porte', 'colonne', i],
@@ -432,51 +524,45 @@
         type:   colonne.porte.type,
         id:     nextId(children),
       }]
+
+      return children
     }
 
-    // Update values
-    for(let i = 0; i < children.length; i++){
-      const source = children[i].source
-      switch(source[0]) {
-      default: break
+    function creePorteCasier(colonne, i, casier, j, children){
+      const type = casier.porte.facade ? 'Facade' : 'Porte'
+      const child_idx = children.findIndex(c => c.source.join('-') == `${type}-col-${i}-cas-${j}`)
 
-      case 'Porte':
-        let defaults
-        switch(source[1]){
-        default: break
+      console.log("casier %d,%d", i, j, type, child_idx)
+      // Supprimer la facade si elle n'est pas du bon type
 
-        case 'colonne':
-          const col = opt.colonnes[source[2]]
-          defaults = {
-            force_largeur: true,
-            force_hauteur: true,
-            largeur:
-              (col.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
-              (col.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
-              (col.porte.type == 'encastre') ? col.largeur
-                                             : 0,
-            hauteur:
-              (col.porte.type == 'total')    ? opt.hauteur :
-              (col.porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
-              (col.porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants
-                                             : 0,
-          }
-          break
-        }
-
-        children[i] = {
-          name: `colonne n°${i+1}`,
-          ...children[i],
-          type: 'Porte',
-          defaults: defaults,
-        }
-        break
+      const other_type = casier.porte.facade ? 'Porte' : 'Facade'
+      const other_child_idx = children.findIndex(c => c.source.join('-') == `${other_type}-col-${i}-cas-${j}`)
+      if(other_child_idx != -1 && confirm(`Supprimer la ${other_type} ${children[other_child_idx].name} ?`)) {
+        children.splice(other_child_idx, 1)
       }
-    }
 
-    return {
-      ...data,
-      children: children,
+      // Supprimer la porte si elle n'existe pas
+      // Si elle existe, stopper là
+
+      if (!casier.porte.type) {
+        // Pas de porte
+        if (child_idx != -1 && confirm(`Supprimer la ${type} ${children[child_idx].name} ?`)) {
+          children.splice(child_idx, 1)
+        }
+        return children
+      }
+      if (child_idx != -1) return children; // Porte trouvée
+
+      // Créer la porte si elle n'ést pas encore créée
+
+      children = [...children, {
+        source: [type, 'col', i, 'cas', j],
+        name:   prompt(`Quel nom donner à la ${type.toLowerCase()} ?`, `colonne n°${i+1}, casier n°${j+1}`),
+        type:   colonne.porte.type,
+        id:     nextId(children),
+      }]
+
+      return children
     }
   }
 
@@ -952,6 +1038,24 @@
       <div>
         {#each [selection_casier] as sel (sel.key)}
         <p><strong>Casier n° {selection_casier_j+1}</strong></p>
+        <fieldset>
+          <legend>Porte col{selection_casier_i+1} cas{selection_casier_j+1}</legend>
+          <label>
+            <span>Type :&nbsp;</span>
+            <InputSelect
+              def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].porte.type}
+              bind:value={ui_colonnes[selection_casier_i].casiers[selection_casier_j].porte.type}>
+              <option value="">Aucune</option>
+              <option value="total">Recouvrement total</option>
+              <option value="demi">Recouvrement à moitié</option>
+              <option value="encastre">Encastré</option>
+            </InputSelect>
+            <label><InputCheckbox tristate={false}
+              def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].porte.facade}
+              bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].porte.facade}
+              /> façade seulement</label>
+          </label>
+        </fieldset>
         <p>
           <!--
           <label><InputCheckbox checked={true} /> panneau gauche</label>

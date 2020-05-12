@@ -3,7 +3,7 @@
   export let pieces = []
   export let merge = true
 
-  let separer = false
+  let separer = true
 
   // Pièces, tableau non fusionné
   $: pieces2 = pieces

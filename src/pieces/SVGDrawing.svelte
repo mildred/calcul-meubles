@@ -38,7 +38,7 @@
 
 <p>
   Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %
-  <a href="javascript:void(0)" on:click={save}>Enregistrer</a>
+  <a href="javascript:void(0)" on:click={save}>Enregistrer image</a>
 </p>
 <svg
     bind:this={svgElement}
