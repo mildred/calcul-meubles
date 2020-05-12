@@ -73,7 +73,7 @@
       let reader = new FileReader();
       reader.onload = (e) => {
         data     = JSON.parse(e.target.result)
-        filename = "foo"
+        filename = "projet sans titre"
       }
       reader.readAsText(file);
     }, false)
@@ -94,10 +94,15 @@
       "tree main";
   }
   .toolbar {
+    padding: 4px;
     grid-area: toolbar;
+    background-color: var(--light-bg-color);
+    border-bottom: solid 1px var(--border-color);
   }
   .tree {
     grid-area: tree;
+    background-color: var(--light-bg-color);
+    border-right: solid 1px var(--border-color);
   }
   .main {
     grid-area: main;
