@@ -2,7 +2,8 @@
   import SVGItem from '../pieces/SVGItem.svelte';
 
   export let pieces;
-  export let zoom = 0.5;
+  export let zoom = 0.25;
+  export let name = "Dessin"
 
   let svgElement;
 
@@ -14,7 +15,7 @@
   function save(){
     let markup = svgElement.outerHTML
     // TODO: detect filename
-    let filename = (prompt("Nom du fichier :") || "dessin") + ".svg"
+    let filename = (prompt("Nom du fichier :", name) || "dessin") + ".svg"
 
     let file = new window.File([markup], filename, {
       type: 'image/svg+xml'
@@ -36,8 +37,11 @@
   }
 </script>
 
+<h3>{name}</h3>
+
 <p>
   Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %
+  <br/>
   <a href="javascript:void(0)" on:click={save}>Enregistrer image</a>
 </p>
 <svg

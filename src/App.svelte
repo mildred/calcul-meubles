@@ -11,6 +11,7 @@
   setContext('App-components', components)
 
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
+  let component_layout = 'hsplit'
   let data
 
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
@@ -52,8 +53,6 @@
 
   function isSaved(){
     let json = JSON.stringify(data, null, 2)
-    console.log(json)
-    console.log(fileData)
     return (json == fileData)
   }
 
@@ -123,28 +122,29 @@
 <style>
   .root {
     display: grid;
-    grid-template-rows: auto auto;
-    grid-template-columns: 15rem auto;
+    grid-template-rows: 3rem auto;
+    grid-template-columns: auto auto;
     grid-template-areas:
       "toolbar toolbar"
       "tree main";
+    height: 100%
   }
   .toolbar {
     padding: 4px;
     grid-area: toolbar;
     background-color: var(--light-bg-color);
     border-bottom: solid 1px var(--border-color);
-    height: 2em;
   }
   .tree {
     grid-area: tree;
     background-color: var(--light-bg-color);
     border-right: solid 1px var(--border-color);
     overflow: auto;
+    width: 15rem;
+    resize: horizontal;
   }
   .main {
     grid-area: main;
-    padding: 4px;
     overflow: auto;
   }
   #json:not(:target) {
@@ -158,7 +158,7 @@
   }
 </style>
 
-<div class="root">
+<div class="root" class:component-hsplit={component_layout == 'hsplit'}>
   <div class="toolbar">
     <button on:click={clear}>Nouveau</button>
     <button on:click={simpleSave}>Enregistrer</button>
@@ -166,10 +166,19 @@
     <button on:click={open}>Ouvrir...</button>
     <a href="#json">{filename}</a>
     <a href="@" on:click|preventDefault={rename}>✎</a>
+    <label style="float: right">
+      Agencement :
+      <select bind:value={component_layout}>
+        <option value="">À la suite</option>
+        <option value="hsplit">Horizontal</option>
+      </select>
+    </label>
   </div>
 
   <div class="tree">
-    <TreeItem data={data}/>
+    <div>
+      <TreeItem data={data}/>
+    </div>
   </div>
 
   <div class="main">

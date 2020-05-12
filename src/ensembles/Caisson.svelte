@@ -906,14 +906,13 @@
 </style>
 
 <Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} on:datachange>
+  <div slot="left">
+    <SVGDrawing pieces={pieces} name={`Caisson ${data.name}`} />
+  </div>
+
   <div class="main">
 
-    <h1>Calcul d'un caisson</h1>
-    <h2>Caisson {data.name}</h2>
-
-    <div style="float: left">
-      <SVGDrawing pieces={pieces} />
-    </div>
+    <h3>Mesures</h3>
 
     <form style="float: left">
     <label><span>Hauteur    : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} /> mm </label>

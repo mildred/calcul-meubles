@@ -7,6 +7,7 @@
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
+  import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
 
   export let path
@@ -146,6 +147,10 @@
 </style>
 
 <Component bind:data={data} path={path} on:datachange>
+  <div slot="left">
+    <SVGDrawing pieces={pieces} name={`Porte ${data.name}`} />
+  </div>
+
   <div class="main">
 
     <h1>Calcul d'une porte</h1>

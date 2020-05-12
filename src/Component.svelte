@@ -53,29 +53,57 @@
   .debug{
     display: none;
   }
+  .component {
+    height: 100%;
+  }
+  :global(.component-hsplit) .component-grid {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      "left main";
+  }
+  :global(.component-hsplit) .component-grid-left {
+    border-right: solid 1px var(--border-color);
+    grid-area: left;
+    overflow: auto;
+    resize: horizontal;
+  }
+  :global(.component-hsplit) .component-grid-main {
+    grid-area: main;
+    overflow: auto;
+  }
 </style>
 
 <div class="component" id="component-{path}">
-  <slot></slot>
+  <div class="component-grid">
+    <div class="component-grid-left">
+      <slot name="left"></slot>
+    </div>
+    <div class="component-grid-main">
+      <slot></slot>
 
-  <!-- data.children is empty if this is not there: -->
-  <pre style="display: none">data.children = {JSON.stringify(data.children, null, 2)}</pre>
+      <!-- data.children is empty if this is not there: -->
+      <pre style="display: none">data.children = {JSON.stringify(data.children, null, 2)}</pre>
 
-  {#if data.children && data.children.length}
-  <ul>
-  {#each data.children as child, i}
-    {#if child.type}
-    <li>
-      <a href="#/component/{path}-{child.id}">{child.type} {child.name}</a>
-      <a href="@" on:click|preventDefault={e => renameChild(i)}>✎</a>
-      <a href="@" on:click|preventDefault={e => deleteChild(i)}>🗑</a>
-    </li>
-    {/if}
-  {/each}
-  </ul>
-  {/if}
+      {#if data.children && data.children.length}
+      <ul>
+      {#each data.children as child, i}
+        {#if child.type}
+        <li>
+          <a href="#/component/{path}-{child.id}">{child.type} {child.name}</a>
+          <a href="@" on:click|preventDefault={e => renameChild(i)}>✎</a>
+          <a href="@" on:click|preventDefault={e => deleteChild(i)}>🗑</a>
+        </li>
+        {/if}
+      {/each}
+      </ul>
+      {/if}
 
-  <pre class="debug">{JSON.stringify(data, null, 2)}</pre>
+      <pre class="debug">{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  </div>
 </div>
 
 {#if data.children && data.children.length}

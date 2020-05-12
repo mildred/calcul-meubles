@@ -7,6 +7,7 @@
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
+  import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
 
   export let path
@@ -58,34 +59,11 @@
 </style>
 
 <Component bind:data={data} path={path} on:datachange>
+  <div slot="left">
+    <SVGDrawing pieces={pieces} name={`Façade ${data.name}`} />
+  </div>
+
   <div class="main">
-
-    <h1>Calcul d'une façade</h1>
-    <h2>Façade {data.name}</h2>
-
-    <div style="float: left">
-    <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
-    <svg
-        width="{5 + zoom*opt.largeur + 5 + zoom*opt.hauteur + 5}"
-        height="{5 + zoom*opt.epaisseur + 5 + zoom*opt.hauteur + 5}">
-      <g transform="translate(5, {5 + zoom*opt.hauteur}) scale({zoom} {zoom})">
-        {#each pieces as piece}
-          <SVGPiece piece={piece} pos="xy" />
-        {/each}
-      </g>
-      <g transform="translate({5 + zoom*opt.largeur + 10}, {5 + zoom*opt.hauteur}) scale({zoom} {zoom})">
-        {#each pieces as piece}
-          <SVGPiece piece={piece} pos="zy" />
-        {/each}
-      </g>
-      <g transform="translate(5, {5 + zoom*opt.hauteur + zoom*(opt.epaisseur) + 5}) scale({zoom} {zoom})">
-        {#each pieces as piece}
-          <SVGPiece piece={piece} pos="xz" />
-        {/each}
-      </g>
-    </svg>
-    </div>
-
     <form style="float: left">
     <label><span>Largeur    : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
     <label><span>Hauteur    : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>

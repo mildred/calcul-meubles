@@ -71,15 +71,16 @@
 </script>
 
 <Component bind:data={data} state={state} bind:childrenState={childrenState} path={path} on:datachange>
+  <div slot="left">
+    {#each pieces_drawings as pieces_d, i}
+      <div data-count={pieces.length}>
+        <SVGDrawing bind:zoom={zoom} pieces={pieces_d || []} name={`Dessin ${i+1}`} />
+      </div>
+    {/each}
+  </div>
+
   <h1>Sous-ensemble</h1>
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
-
-  {#each pieces_drawings as pieces_d, i}
-    <div data-count={pieces.length}>
-      <p>Dessin {i+1}</p>
-      <SVGDrawing bind:zoom={zoom} pieces={pieces_d || []} />
-    </div>
-  {/each}
 
   {#if children.length > 0 }
   <table>
