@@ -58,6 +58,13 @@ export default class Piece {
     })
   }
 
+  prefix_name() {
+    return this.update_new({
+      ...this,
+      names: Array.from(arguments).filter(x => x).concat(this.names),
+    })
+  }
+
   multiply_que(que){
     return this.update_new({
       ...this,
@@ -240,6 +247,10 @@ export default class Piece {
 
   prix(prix_cube, factor) {
     return this.cubage(factor) * prix_cube
+  }
+
+  individual(){
+    return [this]
   }
 
   signature() {

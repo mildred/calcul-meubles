@@ -48,6 +48,7 @@
 
   $: data.opt = opt
   $: data.ui  = ui
+  let state = {}
 
   let zoom = 0.25
 
@@ -115,6 +116,8 @@
     montant_g, montant_d,
   ].filter(x => x != null).map(p => p.multiply_que(opt.quantite))
 
+  $: state.pieces = pieces
+
   $: nombre_tenons = pieces.reduce((n, p) => n + p.que * p.nombre_tenons, 0)
   $: nombre_pieces = pieces.reduce((n, p) => n + p.que, 0)
   $: pieces_par_epaisseur = pieces
@@ -146,7 +149,7 @@
   }
 </style>
 
-<Component bind:data={data} path={path} on:datachange>
+<Component bind:data={data} state={state} path={path} on:datachange>
   <div slot="left">
     <SVGDrawing pieces={pieces} name={`Porte ${data.name}`} />
 

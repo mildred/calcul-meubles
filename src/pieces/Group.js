@@ -11,6 +11,10 @@ export default class Group {
     this.z = 0
   }
 
+  individual() {
+    return this.pieces.reduce((res, p) => res.concat(p.individual().map(p => p.prefix_name(this.name))), [])
+  }
+
   update(props) {
     return this.update_new({...this, ...props})
   }

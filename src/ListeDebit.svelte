@@ -7,6 +7,7 @@
 
   // Pièces, tableau non fusionné
   $: pieces2 = pieces
+    .reduce((res, p) => res.concat(p.individual()), [])
     .map((p) => (
       (!p.piece) ? p : p.piece.update_new({
         ...p.piece,
@@ -26,8 +27,8 @@
   let cubeprice = 1440
   let cubemargin = 135
 
-  $: total_cube = pieces3.map(p => p.que * p.cubage(cubemargin/100)).reduce((a, b) => (a+b))
-  $: total_prix = pieces3.map(p => p.que * p.prix(cubeprice, cubemargin/100)).reduce((a, b) => (a+b))
+  $: total_cube = pieces3.map(p => p.que * p.cubage(cubemargin/100)).reduce((a, b) => (a+b), 0)
+  $: total_prix = pieces3.map(p => p.que * p.prix(cubeprice, cubemargin/100)).reduce((a, b) => (a+b), 0)
 
 </script>
 

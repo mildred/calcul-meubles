@@ -3,6 +3,8 @@
   import Group from '../pieces/Group.js';
   import { nextId } from '../utils.js';
   import Component from '../Component.svelte';
+  import ChildrenPositions from '../ChildrenPositions.svelte';
+  import ListeDebit from '../ListeDebit.svelte'
   import InputNumber from '../controls/InputNumber.svelte';
   import InputCheckbox from '../controls/InputCheckbox.svelte';
 
@@ -24,33 +26,13 @@
   let childrenPos = data.childrenPos
   let children = data.children
 
-  $: childrenPos = children
-    .map((_,i) => ({x: 0, y: 0, z: 0, d: 1, show: true, ...childrenPos[i]}))
-
   $: data.childrenPos = childrenPos
   $: data.children = children
 
   let pieces = []
+  let pieces_drawings = []
 
   let zoom = 0.5;
-
-  $: pieces = childrenState
-    .map((c, i) => new Group(c.pieces, `${children[i].type} ${children[i].name}`))
-    .map((g, i) => {
-      let {x, y, z} = {
-        x: 0, y: 0, z: 0,
-        ...childrenPos[i],
-      }
-      return g.position(x, y, z)
-    })
-
-  $: pieces_drawings = pieces
-    .reduce((res, p, i) => {
-      let pos = {d: 1, show: true, ...childrenPos[i]}
-      let d = pos.d || 1;
-      if(pos.show) res[d-1] = [...(res[d-1] || []), p];
-      return res;
-    }, [])
 
   //$: console.log(pieces_drawings)
 
@@ -82,33 +64,15 @@
   <h1>Sous-ensemble</h1>
   <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
 
-  {#if children.length > 0 }
-  <table>
-    <tr>
-      <th style="text-align: left">Éléments</th>
-      <th style="text-align: right">dimensions (L&nbsp;x&nbsp;h&nbsp;x&nbsp;p)</th>
-      <th style="text-align: right">de la gauche</th>
-      <th style="text-align: right">du bas</th>
-      <th style="text-align: right">du mur</th>
-      <th style="text-align: right" colspan="2">n° dessin</th>
-      <td></td>
-    </tr>
-  {#each children as child, i}
-    {#if child.type}
-    <tr>
-      <td>{child.type} {child.name}</td>
-      <td style="text-align: right">{(pieces[i]||{}).largeur}x{(pieces[i]||{}).hauteur}x{(pieces[i]||{}).profondeur}</td>
-      <td><InputNumber bind:value={childrenPos[i].x} def={0} /></td>
-      <td><InputNumber bind:value={childrenPos[i].y} def={0} /></td>
-      <td><InputNumber bind:value={childrenPos[i].z} def={0} /></td>
-      <td><InputCheckbox tristate={false} bind:checked={childrenPos[i].show} /></td>
-      <td><InputNumber bind:value={childrenPos[i].d} def={1} min={1} /></td>
-      <td>mm</td>
-    </tr>
-    {/if}
-  {/each}
-  </table>
-  {/if}
+  <ChildrenPositions
+    children={children}
+    childrenState={childrenState}
+    bind:childrenPos={childrenPos}
+    bind:pieces={pieces}
+    bind:pieces_drawings={pieces_drawings}
+    drawings={true} />
+
+  <ListeDebit pieces={pieces} />
 
   <button on:click={e => add('Porte')}>Nouvelle porte</button>
   <button on:click={e => add('Caisson')}>Nouveau caisson</button>

@@ -24,6 +24,7 @@
 
   let opt = { ...initdata.opt }
   let ui  = { ...(initdata.ui || initdata.opt) }
+  let state = {}
 
   $: opt      = {...defaults, ...cleanObject(ui)}
   $: data.opt = opt
@@ -37,6 +38,8 @@
     .put(0, 0, 0, 'xzy')
 
   $: pieces = [etagere]
+
+  $: state.pieces = pieces
 </script>
 
 <style>
@@ -58,7 +61,7 @@
   }
 </style>
 
-<Component bind:data={data} path={path} on:datachange>
+<Component bind:data={data} path={path} state={state} on:datachange>
   <div slot="left">
     <SVGDrawing pieces={pieces} name={`Étagère ${data.name}`} />
   </div>

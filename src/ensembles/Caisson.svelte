@@ -1,6 +1,7 @@
 <script>
   import { cleanObject, pipeline, nextId } from '../utils.js';
   import Component from '../Component.svelte';
+  import ChildrenPositions from '../ChildrenPositions.svelte';
   import Piece from '../pieces/piece.js';
   import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
@@ -146,16 +147,23 @@
     opt => calculSubdivisionMontants(opt, ui_montants))
 
   //
-  // Update data from opt
+  // Update children then data from opt
   //
 
-  $: data = pipeline(
-    {
-      ...data,
-      opt: opt,
-      ui: ui
-    },
-    data => calculPortes(opt, data))
+  let children = data.children
+  $: children = pipeline(
+    children,
+    children => calculPortes(opt, children))
+
+  let childrenPos = data.childrenPos
+
+  $: data = {
+    ...data,
+    opt: opt,
+    ui: ui,
+    children: children,
+    childrenPos: childrenPos,
+  }
 
   //
   // Fonctions de calcul
@@ -411,9 +419,9 @@
     }
   }
 
-  function calculPortes(opt, data){
+  function calculPortes(opt, children){
     //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
-    let children = [...(data.children || [])]
+    children = [...(children || [])]
 
     // Migrate old portes
     for(let i = 0; i < children.length; i++){
@@ -447,6 +455,8 @@
       }
 
       let defaults
+      let defaultPosition
+      let epaisseur_porte = (children[i].opt || {}).epaisseur || opt.epaisseur_montants
 
       switch(source[1]){
         default: break
@@ -472,7 +482,18 @@
                   (cas.porte.type == 'encastre') ? cas.hauteur
                                                  : 0,
               }
-              console.log("Calcul porte casier", col, cas, defaults)
+              defaultPosition = {
+                x: cas.xpos
+                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
+                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                                                  : 0),
+                y: cas.ypos
+                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
+                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                                                  : 0),
+                z: opt.profondeur
+                   - ((cas.porte.type == 'encastre') ? epaisseur_porte : 0),
+              }
               break
             default:
               defaults = {
@@ -489,6 +510,18 @@
                   (col.porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants
                                                  : 0,
               }
+              defaultPosition = {
+                x: opt.hauteur - opt.epaisseur_montants
+                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
+                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                                                  : 0),
+                y: col.ypos
+                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
+                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                                                  : 0),
+                z: opt.profondeur
+                   - ((col.porte.type == 'encastre') ? epaisseur_porte : 0),
+              }
               break
           }
           break
@@ -499,13 +532,11 @@
         ...children[i],
         type: type,
         defaults: defaults,
+        defaultPosition: defaultPosition,
       }
     }
 
-    return {
-      ...data,
-      children: children,
-    }
+    return children
 
     function creePorteColonne(colonne, i, children){
       const child_idx = children.findIndex(c => c.source.join('-') == `Porte-colonne-${i}`)
@@ -806,6 +837,8 @@
     ))
   ))
 
+  let all_pieces = []
+  let child_pieces = []
 
   $: pieces = [
     montant_ar_g, montant_av_g, montant_ar_d, montant_av_d,
@@ -825,7 +858,9 @@
     .concat(panneau_inter2_dessous.reduce((a,b) => a.concat(b), []))
     .filter(x => x)
 
-  $: state.pieces = pieces
+  $: all_pieces = pieces.concat(child_pieces)
+
+  $: state.pieces = all_pieces
 
   $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
   $: nombre_pieces = pieces.length
@@ -907,7 +942,7 @@
 
 <Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} on:datachange>
   <div slot="left">
-    <SVGDrawing pieces={pieces} name={`Caisson ${data.name}`} />
+    <SVGDrawing pieces={all_pieces} name={`Caisson ${data.name}`} />
   </div>
 
   <div class="main">
@@ -1153,6 +1188,14 @@
       </tr>
       {/each}
     </table>
-    <ListeDebit pieces={pieces} />
+
+    <ChildrenPositions
+      children={children}
+      childrenState={childrenState}
+      defaultChildrenPos={children.map(c => c.defaultPosition)}
+      bind:childrenPos={childrenPos}
+      bind:pieces={child_pieces} />
+
+    <ListeDebit pieces={all_pieces} />
   </div>
 </Component>

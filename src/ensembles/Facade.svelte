@@ -14,6 +14,7 @@
   export let initdata = {}
 
   let data = {...initdata}
+  let state = {}
 
   let defaults = {
     largeur: 400,
@@ -37,6 +38,8 @@
     .put(0, 0, 0, 'xyz')
 
   $: pieces = [facade]
+
+  $: state.pieces = pieces
 </script>
 
 <style>
@@ -58,7 +61,7 @@
   }
 </style>
 
-<Component bind:data={data} path={path} on:datachange>
+<Component bind:data={data} path={path} state={state} on:datachange>
   <div slot="left">
     <SVGDrawing pieces={pieces} name={`Façade ${data.name}`} />
   </div>
