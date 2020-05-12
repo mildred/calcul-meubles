@@ -1,5 +1,6 @@
 <script>
   import { getContext, setContext, createEventDispatcher } from 'svelte';
+  import { routeInfo } from './route.js';
 
   const dispatch = createEventDispatcher();
   let components = getContext('App-components')
@@ -34,10 +35,11 @@
   }
 
   function onHashChange(){
+    const route = routeInfo(window.location.hash)
     Array.from(document.querySelectorAll('.target')).map(x => x.classList.remove('target'))
-    Array.from(document.querySelectorAll(':target')).map(x => x.classList.add('target'))
-    if(window.location.hash != "")
-      Array.from(document.querySelectorAll(window.location.hash)).map(x => x.classList.add('target'))
+    if(route.component_selector) {
+      Array.from(document.querySelectorAll(route.component_selector)).map(x => x.classList.add('target'))
+    }
   }
 
   window.addEventListener("hashchange", onHashChange, false);
@@ -64,7 +66,7 @@
   {#each data.children as child, i}
     {#if child.type}
     <li>
-      <a href="#component-{path}-{child.id}">{child.type} {child.name}</a>
+      <a href="#/component/{path}-{child.id}">{child.type} {child.name}</a>
       <a href="@" on:click|preventDefault={e => renameChild(i)}>✎</a>
       <a href="@" on:click|preventDefault={e => deleteChild(i)}>🗑</a>
     </li>

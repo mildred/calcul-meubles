@@ -532,7 +532,6 @@
       const type = casier.porte.facade ? 'Facade' : 'Porte'
       const child_idx = children.findIndex(c => c.source.join('-') == `${type}-col-${i}-cas-${j}`)
 
-      console.log("casier %d,%d", i, j, type, child_idx)
       // Supprimer la facade si elle n'est pas du bon type
 
       const other_type = casier.porte.facade ? 'Porte' : 'Facade'

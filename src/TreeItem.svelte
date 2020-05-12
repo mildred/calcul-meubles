@@ -1,11 +1,14 @@
 <script>
+  import { routeInfo } from './route.js';
+
   export let data = {};
   export let path = '0';
 
   let selected = false
 
   function onHashChange(){
-    selected = (window.location.hash === `#component-${path}`)
+    const route = routeInfo(window.location.hash)
+    selected = (route.component_selector === `#component-${path}`)
   }
 
   window.addEventListener("hashchange", onHashChange, false);
@@ -18,7 +21,7 @@
   }
 </style>
 
-<a href="#component-{path}" class:selected={selected}>{data.type} {data.name}</a>
+<a href="#/component/{path}" class:selected={selected}>{data.type} {data.name}</a>
 {#if data.children}
 <ul>
   {#each data.children as child}
