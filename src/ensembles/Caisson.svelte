@@ -511,13 +511,13 @@
                                                  : 0,
               }
               defaultPosition = {
-                x: opt.hauteur - opt.epaisseur_montants
-                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
-                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                x: col.ypos
+                   - ((col.porte.type == 'total') ? opt.epaisseur_montants :
+                      (col.porte.type == 'demi')  ? opt.epaisseur_montants / 2
                                                   : 0),
-                y: col.ypos
-                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
-                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                y: opt.epaisseur_montants
+                   - ((col.porte.type == 'total') ? opt.epaisseur_montants :
+                      (col.porte.type == 'demi')  ? opt.epaisseur_montants / 2
                                                   : 0),
                 z: opt.profondeur
                    - ((col.porte.type == 'encastre') ? epaisseur_porte : 0),
