@@ -416,12 +416,19 @@
     // Create new
     for(let i = 0; i < opt.colonnes.length; i++){
       const colonne = opt.colonnes[i]
-      if (!colonne.porte.type) continue; // Pas de porte
       const child_idx = children.findIndex(c => c.source.join('-') == `Porte-colonne-${i}`)
+      if (!colonne.porte.type) {
+        // Pas de porte
+        if (child_idx != -1 && confirm(`Supprimer la porte ${children[child_idx].name} ?`)) {
+          children.splice(child_idx, 1)
+        }
+        continue
+      }
       if (child_idx != -1) continue; // Porte trouvée
 
       children = [...children, {
         source: ['Porte', 'colonne', i],
+        name:   prompt("Quel nom donner à la porte ?", `colonne n°${i+1}`),
         type:   colonne.porte.type,
         id:     nextId(children),
       }]
