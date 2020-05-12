@@ -65,3 +65,7 @@ button:active {
 button:focus {
 	border-color: #666;
 }
+
+option[selected], option.selected{
+	font-weight: bold;
+}

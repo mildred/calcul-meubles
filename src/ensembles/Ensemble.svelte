@@ -90,7 +90,7 @@
       <th style="text-align: right">de la gauche</th>
       <th style="text-align: right">du bas</th>
       <th style="text-align: right">du mur</th>
-      <th style="text-align: right">n° dessin</th>
+      <th style="text-align: right" colspan="2">n° dessin</th>
       <td></td>
     </tr>
   {#each children as child, i}
@@ -101,7 +101,8 @@
       <td><InputNumber bind:value={childrenPos[i].x} def={0} /></td>
       <td><InputNumber bind:value={childrenPos[i].y} def={0} /></td>
       <td><InputNumber bind:value={childrenPos[i].z} def={0} /></td>
-      <td><InputCheckbox tristate={false} bind:checked={childrenPos[i].show} /><InputNumber bind:value={childrenPos[i].d} def={1} min={1} /></td>
+      <td><InputCheckbox tristate={false} bind:checked={childrenPos[i].show} /></td>
+      <td><InputNumber bind:value={childrenPos[i].d} def={1} min={1} /></td>
       <td>mm</td>
     </tr>
     {/if}

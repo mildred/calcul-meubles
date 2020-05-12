@@ -49,7 +49,7 @@
   $: data.opt = opt
   $: data.ui  = ui
 
-  let zoom = 0.5
+  let zoom = 0.25
 
   $: montant = new Piece()
     .add_name("Montant")
@@ -149,14 +149,7 @@
 <Component bind:data={data} path={path} on:datachange>
   <div slot="left">
     <SVGDrawing pieces={pieces} name={`Porte ${data.name}`} />
-  </div>
 
-  <div class="main">
-
-    <h1>Calcul d'une porte</h1>
-    <h2>Porte {data.name}</h2>
-
-    <div style="float: left">
     <!--<img src="porte.svg" />-->
     <p>Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %</p>
     <svg
@@ -200,8 +193,9 @@
         {/each}
       </g>
     </svg>
-    </div>
+  </div>
 
+  <div class="main">
     <form style="float: left">
     <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
     <label>

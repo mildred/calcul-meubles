@@ -1,6 +1,7 @@
 <script>
   import { setContext } from 'svelte';
   import TreeItem from './TreeItem.svelte';
+  import TreeItemOption from './TreeItemOption.svelte';
   import Ensemble from './ensembles/Ensemble.svelte';
   import Porte from './ensembles/Porte.svelte';
   import Caisson from './ensembles/Caisson.svelte';
@@ -13,6 +14,7 @@
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
   let component_layout = 'hsplit'
   let data
+  let tree_hidden = false
 
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
   let fileData = localStorage.getItem('calcul-meubles-file-data')
@@ -117,6 +119,24 @@
     input.click();
     document.body.removeChild(input);
   }
+
+  function moveTree(e){
+    if(e.target.value == 'show') {
+      showTree()
+      e.target.value = window.location.hash
+    } else {
+      window.location.hash = e.target.value
+    }
+  }
+
+  function hideTree(e){
+    e.preventDefault()
+    tree_hidden = true
+  }
+
+  function showTree(){
+    tree_hidden = false
+  }
 </script>
 
 <style>
@@ -128,6 +148,12 @@
       "toolbar toolbar"
       "tree main";
     height: 100%
+  }
+  .tree-hidden.root {
+    grid-template-columns: auto;
+    grid-template-areas:
+      "toolbar"
+      "main";
   }
   .toolbar {
     padding: 4px;
@@ -142,6 +168,12 @@
     overflow: auto;
     width: 15rem;
     resize: horizontal;
+  }
+  .tree-hidden .tree {
+    display: none;
+  }
+  .root:not(.tree-hidden) .tree-select {
+    display: none;
   }
   .main {
     grid-area: main;
@@ -158,8 +190,12 @@
   }
 </style>
 
-<div class="root" class:component-hsplit={component_layout == 'hsplit'}>
+<div class="root" class:component-hsplit={component_layout == 'hsplit'} class:tree-hidden={tree_hidden}>
   <div class="toolbar">
+    <select on:change={moveTree} class="tree-select">
+      <TreeItemOption data={data}/>
+      <option value="show">(montrer)</option>
+    </select>
     <button on:click={clear}>Nouveau</button>
     <button on:click={simpleSave}>Enregistrer</button>
     <button on:click={saveAs}>Enregistrer sous...</button>
@@ -176,9 +212,8 @@
   </div>
 
   <div class="tree">
-    <div>
-      <TreeItem data={data}/>
-    </div>
+    <TreeItem data={data}/>
+    <a on:click={hideTree} href='#'>(cacher)</a>
   </div>
 
   <div class="main">
