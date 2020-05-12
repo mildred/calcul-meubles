@@ -372,7 +372,7 @@
       let panneaux = Array.from(Array(traverses.length + 1).keys()).map(j => {
         let first = (j == 0)
         let last  = (j >= traverses.length)
-        let cote  = (i == 0 || i == opt.colonnes.length+1)
+        let cote  = (i == 0 || i == opt.colonnes.length)
 
         return {
           first:  first,
