@@ -68,17 +68,17 @@
     <svg
         width="{5 + zoom*opt.largeur + 5 + zoom*opt.profondeur + 5}"
         height="{5 + zoom*opt.epaisseur + 5 + zoom*opt.profondeur + 5}">
-      <g transform="translate(5, 5) scale({zoom} {zoom})">
+      <g transform="translate(5, {5 + zoom*(opt.epaisseur)}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="xy" />
         {/each}
       </g>
-      <g transform="translate({5 + zoom*opt.largeur + 10}, 5) scale({zoom} {zoom})">
+      <g transform="translate({5 + zoom*opt.largeur + 10}, {5 + zoom*(opt.epaisseur)}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="zy" />
         {/each}
       </g>
-      <g transform="translate(5, {5 + zoom*(opt.epaisseur) + 5}) scale({zoom} {zoom})">
+      <g transform="translate(5, {5 + zoom*(opt.epaisseur) + 5 + zoom*(opt.profondeur)}) scale({zoom} {zoom})">
         {#each pieces as piece}
           <SVGPiece piece={piece} pos="xz" />
         {/each}

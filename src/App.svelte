@@ -14,6 +14,7 @@
   let data
 
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
+  let fileData = localStorage.getItem('calcul-meubles-file-data')
   if(item) {
     data = item.data
     filename = item.filename
@@ -22,9 +23,9 @@
   $: localStorage.setItem('calcul-meubles-data', JSON.stringify({data: data, filename: filename}))
 
   function clear(){
-    let item = localStorage.getItem('calcul-meubles-data')
-    if (item) {
-      if(!confirm(`Vous avez un fichier non enregistré ${item.filename}. Êtes-vous sûr de vouloir le perdre ?`)) return
+    if(!isSaved()) {
+      alert("Fichier non enregistré, veuillez enregistrer le fichier avant d'en créer un nouveau.")
+      return
     }
     localStorage.removeItem('calcul-meubles-data')
     window.location.reload()
@@ -37,10 +38,39 @@
     return true
   }
 
-  function save(){
-    if(!rename()) return;
+  function saveAs(){
+    save(true)
+  }
 
+  function ensureSaved(){
+    let item = localStorage.getItem('calcul-meubles-data')
+    if (item) {
+      if(save(false) == 'cancelled') return false;
+    }
+    return true;
+  }
+
+  function isSaved(){
     let json = JSON.stringify(data, null, 2)
+    console.log(json)
+    console.log(fileData)
+    return (json == fileData)
+  }
+
+  function simpleSave(){
+    if(save(false) == 'already-saved') {
+      alert("Déjà enregistré")
+    }
+  }
+
+  function save(saveAs){
+    let json = JSON.stringify(data, null, 2)
+    if(!saveAs && json == fileData){
+      return 'already-saved';
+    }
+
+    if(saveAs && !rename()) return 'cancelled';
+
     let file = new window.File([json], filename, {
       type: 'application/json'
     })
@@ -57,12 +87,17 @@
       document.body.removeChild(a);
 
       localStorage.removeItem('calcul-meubles-data')
+      fileData = json
     } finally {
       URL.revokeObjectURL(url)
     }
   }
 
   function open(){
+    if(!isSaved()) {
+      alert("Fichier non enregistré, veuillez enregistrer le fichier avant d'en ouvrir un nouveau.")
+      return
+    }
     let input = document.createElement('input');
     input.style.display = 'none';
     input.setAttribute('type', 'file')
@@ -73,7 +108,8 @@
       let reader = new FileReader();
       reader.onload = (e) => {
         data     = JSON.parse(e.target.result)
-        filename = "projet sans titre"
+        filename = file.name
+        fileData = e.target.result
       }
       reader.readAsText(file);
     }, false)
@@ -98,14 +134,18 @@
     grid-area: toolbar;
     background-color: var(--light-bg-color);
     border-bottom: solid 1px var(--border-color);
+    height: 2em;
   }
   .tree {
     grid-area: tree;
     background-color: var(--light-bg-color);
     border-right: solid 1px var(--border-color);
+    overflow: auto;
   }
   .main {
     grid-area: main;
+    padding: 4px;
+    overflow: auto;
   }
   #json:not(:target) {
     display: none;
@@ -121,7 +161,8 @@
 <div class="root">
   <div class="toolbar">
     <button on:click={clear}>Nouveau</button>
-    <button on:click={save}>Enregistrer sous...</button>
+    <button on:click={simpleSave}>Enregistrer</button>
+    <button on:click={saveAs}>Enregistrer sous...</button>
     <button on:click={open}>Ouvrir...</button>
     <a href="#json">{filename}</a>
     <a href="@" on:click|preventDefault={rename}>✎</a>
