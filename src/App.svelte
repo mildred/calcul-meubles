@@ -10,7 +10,8 @@
   import Caisson from './ensembles/Caisson.svelte';
   import Etagere from './ensembles/Etagere.svelte';
   import Facade from './ensembles/Facade.svelte';
-  let components = { Porte, Caisson, Ensemble, Etagere, Facade }
+  import Tiroir from './ensembles/Tiroir.svelte';
+  let components = { Porte, Caisson, Ensemble, Etagere, Facade, Tiroir }
 
   setContext('App-components',  components)
 

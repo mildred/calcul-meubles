@@ -75,6 +75,7 @@
     <button on:click={e => add('Caisson')}>Nouveau caisson</button>
     <button on:click={e => add('Etagere')}>Nouvelle étagère</button>
     <button on:click={e => add('Facade')}>Nouvelle façade</button>
+    <button on:click={e => add('Tiroir')}>Nouveau tiroir</button>
     <button on:click={e => add('Ensemble')}>Nouveau sous-ensemble</button>
   </div>
 

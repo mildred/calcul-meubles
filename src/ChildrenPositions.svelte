@@ -16,7 +16,10 @@
     .map((_,i) => cleanObject(childrenPos[i] || {}))
 
   $: pieces = children
-    .map((c, i) => new Group((childrenState[i] || {}).pieces || [], `${c.type} ${c.name}`, c.type))
+    .map((c, i) => {
+      const state = childrenState[i] || {}
+      return state.pieces_group || new Group(state.pieces || [], `${c.type} ${c.name}`, c.type)
+    })
     .map((g, i) => {
       let {x, y, z} = {
         x: 0, y: 0, z: 0,
