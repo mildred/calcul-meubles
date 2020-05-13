@@ -1,12 +1,18 @@
 <script>
+  import { getContext } from 'svelte';
+  import { reduceToObject } from './utils.js';
+  import Group from './pieces/Group.js';
+  import Estimation from './Estimation.svelte'
 
   export let pieces = []
   export let merge = true
+  export let estimations
 
   let separer = true
+  let totaux = true
 
   // Pièces, tableau non fusionné
-  $: pieces2 = pieces
+  $: pieces2 = pieces.pieces
     .reduce((res, p) => res.concat(p.individual()), [])
     .map((p) => (
       (!p.piece) ? p : p.piece.update_new({
@@ -24,31 +30,47 @@
     ))
 
 
-  let cubeprice = 1440
-  let cubemargin = 135
+  let cubeprice
+  let cubemargin
+  getContext('settings').subscribe(settings => {
+    cubeprice = settings.cubeprice
+    cubemargin = settings.cubemargin
+  })
 
   $: total_cube = pieces3.map(p => p.que * p.cubage(cubemargin/100)).reduce((a, b) => (a+b), 0)
   $: total_prix = pieces3.map(p => p.que * p.prix(cubeprice, cubemargin/100)).reduce((a, b) => (a+b), 0)
 
+  let statistics = []
+  $: statistics = calculStatistics(pieces, totaux)
+  $: statistics_epaisseurs = Object.keys(statistics
+    .reduce((h,x) => {x.epaisseurs.forEach(ep => h[ep.epaisseur] = true); return h}, {}))
+
+  function calculStatistics(total_group, totaux){
+    return total_group
+      .flat_groups('', totaux)
+      .map(group => {
+        const pieces_par_epaisseur = group.pieces
+          .reduce((h, p) => ({...h, [p.epaisseur]: [...(h[p.epaisseur]||[]), p]}), {})
+        const stats_epaisseur = Object.keys(pieces_par_epaisseur)
+          .map((epaisseur) => ({
+            epaisseur: epaisseur,
+            nb_pieces: pieces_par_epaisseur[epaisseur].length,
+            surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.surface(), 0)
+          }))
+        return {
+          name:       group.name,
+          nb_tenons:  group.pieces.reduce((n, p) => n + p.nombre_tenons, 0),
+          nb_pieces:  group.pieces.length,
+          surface:    group.surface(),
+          epaisseurs: stats_epaisseur,
+        }
+      })
+      .filter(stat => stat.nb_pieces > 0)
+  }
+
 </script>
 
 <style>
-  table {
-    border-collapse: collapse;
-  }
-  th {
-    text-align: left;
-  }
-  th, td {
-    border: 1px solid #ddd;
-    padding: 0.2em;
-  }
-  tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-  td:not(:first-child) {
-    white-space: nowrap;
-  }
   input[size='5'] {
     width: 6em;
   }
@@ -57,7 +79,40 @@
   }
 </style>
 
-<table>
+<table class="styled">
+  <caption>Statistiques pour {pieces.name} (<label style="display: inline"><input bind:checked={totaux} type=checkbox /> afficher totaux</label>)</caption>
+  <tr>
+    <th rowspan=2>Ensemble</th>
+    <th rowspan=2>Nombre de pièces</th>
+    <th rowspan=2>Nombre de tenons</th>
+    <th rowspan=2>Surface des pièces</th>
+    {#each statistics_epaisseurs as ep}
+      <th colspan=2>Pièces ép={ep}</th>
+    {/each}
+  </tr>
+  <tr>
+    {#each statistics_epaisseurs as ep}
+      <th>Nbre</th>
+      <th>m²</th>
+    {/each}
+  </tr>
+  {#each statistics as stat}
+    <tr>
+      <td>{stat.name}</td>
+      <td>{stat.nb_pieces}</td>
+      <td>{stat.nb_tenons}</td>
+      <td>{stat.surface.toPrecision(6)}</td>
+      {#each statistics_epaisseurs as ep}
+        <td>{(stat.epaisseurs.find(e => e.epaisseur == ep)||{}).nb_pieces || 0}</td>
+        <td>{((stat.epaisseurs.find(e => e.epaisseur == ep)||{}).surface || 0).toPrecision(6)}</td>
+      {/each}
+    </tr>
+  {/each}
+</table>
+
+<Estimation pieces={pieces} bind:estimations={estimations} />
+
+<table class="styled">
   <caption>Liste de débit</caption>
   <tr>
     <th>Pièce (<label style="display: inline"><input bind:checked={separer} type=checkbox /> séparer</label>)</th>

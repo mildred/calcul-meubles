@@ -16,3 +16,14 @@ export function pipeline(data, ...operations){
 export function nextId(list) {
   return list.reduce((id, item) => Math.max(id, item.id+1), list.length)
 }
+
+export function reduceToObject(id, idval) {
+  return (obj, item) => {
+    if(!obj) obj = {}
+    obj[item[id || 0]] = (id == null || idval) ? item[idval || 1] : item
+    return obj
+  }
+}
+export function arrayToObject(array, id, idval) {
+  array.reduce(reduceToObject(array, id, idval), {})
+}

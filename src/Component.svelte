@@ -1,6 +1,6 @@
 <script>
   import { getContext, setContext, createEventDispatcher } from 'svelte';
-  import { routeInfo } from './route.js';
+  import { routeDeclare } from './route.js';
 
   const dispatch = createEventDispatcher();
   let components = getContext('App-components')
@@ -34,16 +34,11 @@
     childrenState[i] = e.detail.state
   }
 
-  function onHashChange(){
-    const route = routeInfo(window.location.hash)
-    Array.from(document.querySelectorAll('.target')).map(x => x.classList.remove('target'))
+  routeDeclare(route => {
     if(route.component_selector) {
-      Array.from(document.querySelectorAll(route.component_selector)).map(x => x.classList.add('target'))
+      return document.querySelectorAll(route.component_selector)
     }
-  }
-
-  window.addEventListener("hashchange", onHashChange, false);
-  window.addEventListener("load", onHashChange, false);
+  })
 </script>
 
 <style>

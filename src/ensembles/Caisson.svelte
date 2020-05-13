@@ -3,6 +3,7 @@
   import Component from '../Component.svelte';
   import ChildrenPositions from '../ChildrenPositions.svelte';
   import Piece from '../pieces/piece.js';
+  import Group from '../pieces/Group.js';
   import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
   import InputCheckbox from '../controls/InputCheckbox.svelte';
@@ -861,17 +862,6 @@
   $: all_pieces = pieces.concat(child_pieces)
 
   $: state.pieces = all_pieces
-
-  $: nombre_tenons = pieces.reduce((n, p) => n + p.nombre_tenons, 0)
-  $: nombre_pieces = pieces.length
-  $: pieces_par_epaisseur = pieces
-    .reduce((h, p) => ({...h, [p.epaisseur]: [...(h[p.epaisseur]||[]), p]}), {})
-  $: stats_epaisseur = Object.keys(pieces_par_epaisseur)
-    .map((epaisseur) => ({
-      epaisseur: epaisseur,
-      nombre: pieces_par_epaisseur[epaisseur].length,
-      surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.surface(), 0)
-    }))
 </script>
 
 <style>
@@ -1167,28 +1157,6 @@
 
     </form>
 
-    <hr class="clear"/>
-    <table>
-      <tr>
-        <td>Nombre de tenons</td>
-        <td>{nombre_tenons}</td>
-      </tr>
-      <tr>
-        <td>Nombre de pièces</td>
-        <td>{nombre_pieces}</td>
-      </tr>
-      {#each stats_epaisseur as p}
-      <tr>
-        <td>Nombre de pièces e={p.epaisseur}</td>
-        <td>{p.nombre}</td>
-      </tr>
-      <tr>
-        <td>Surface des pièces e={p.epaisseur}</td>
-        <td>{p.surface}</td>
-      </tr>
-      {/each}
-    </table>
-
     <ChildrenPositions
       children={children}
       childrenState={childrenState}
@@ -1196,6 +1164,6 @@
       bind:childrenPos={childrenPos}
       bind:pieces={child_pieces} />
 
-    <ListeDebit pieces={all_pieces} />
+    <ListeDebit pieces={new Group(all_pieces, `Caisson ${data.name}`, 'Caisson')} />
   </div>
 </Component>

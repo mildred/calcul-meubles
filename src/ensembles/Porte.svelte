@@ -6,6 +6,7 @@
   import Component from '../Component.svelte';
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
+  import Group from '../pieces/Group.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
   import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
@@ -118,16 +119,6 @@
 
   $: state.pieces = pieces
 
-  $: nombre_tenons = pieces.reduce((n, p) => n + p.que * p.nombre_tenons, 0)
-  $: nombre_pieces = pieces.reduce((n, p) => n + p.que, 0)
-  $: pieces_par_epaisseur = pieces
-    .reduce((h, p) => ({...h, [p.epaisseur]: [...(h[p.epaisseur]||[]), p]}), {})
-  $: stats_epaisseur = Object.keys(pieces_par_epaisseur)
-    .map((epaisseur) => ({
-      epaisseur: epaisseur,
-      nombre: pieces_par_epaisseur[epaisseur].reduce((n,p) => n + p.que, 0),
-      surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.que * p.surface(), 0)
-    }))
 </script>
 
 <style>
@@ -228,27 +219,6 @@
     <label><span>Inclure le paneau</span><InputCheckbox bind:checked={ui.inclure_panneau} def={defaults.inclure_panneau} /></label>
     </form>
 
-    <hr class="clear"/>
-    <table>
-      <tr>
-        <td>Nombre de tenons</td>
-        <td>{nombre_tenons}</td>
-      </tr>
-      <tr>
-        <td>Nombre de pièces</td>
-        <td>{nombre_pieces}</td>
-      </tr>
-      {#each stats_epaisseur as p}
-      <tr>
-        <td>Nombre de pièces e={p.epaisseur}</td>
-        <td>{p.nombre}</td>
-      </tr>
-      <tr>
-        <td>Surface des pièces e={p.epaisseur}</td>
-        <td>{p.surface}</td>
-      </tr>
-      {/each}
-    </table>
-    <ListeDebit pieces={pieces} />
+    <ListeDebit pieces={new Group(pieces, `Porte ${data.name}`, 'Porte')} />
   </div>
 </Component>

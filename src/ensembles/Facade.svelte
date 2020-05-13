@@ -6,6 +6,7 @@
   import Component from '../Component.svelte';
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
+  import Group from '../pieces/Group.js';
   import SVGPiece from '../pieces/SVGPiece.svelte';
   import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import ListeDebit from '../ListeDebit.svelte'
@@ -73,6 +74,6 @@
     <label><span>Épaisseur  : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.epaisseur} force={defaults.force_epaisseur}/> mm</label>
 
     <hr class="clear"/>
-    <ListeDebit pieces={pieces} />
+    <ListeDebit pieces={new Group(pieces, `Façade ${data.name}`, 'Facade')} />
   </div>
 </Component>

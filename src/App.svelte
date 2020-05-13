@@ -1,5 +1,8 @@
 <script>
   import { setContext } from 'svelte';
+  import { readable, writable, get } from 'svelte/store';
+  import { routeDeclare } from './route.js';
+  import Settings from './Settings.svelte';
   import TreeItem from './TreeItem.svelte';
   import TreeItemOption from './TreeItemOption.svelte';
   import Ensemble from './ensembles/Ensemble.svelte';
@@ -9,12 +12,21 @@
   import Facade from './ensembles/Facade.svelte';
   let components = { Porte, Caisson, Ensemble, Etagere, Facade }
 
-  setContext('App-components', components)
+  setContext('App-components',  components)
 
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
   let component_layout = 'hsplit'
-  let data
-  let tree_hidden = false
+  let data = {}
+
+  let settings = writable(JSON.parse(localStorage.getItem('calcul-meubles-settings') || '{}'))
+  setContext('settings', settings)
+  settings.subscribe(settings => {
+    data.settings = settings
+    localStorage.setItem('calcul-meubles-settings', JSON.stringify(settings))
+  })
+
+  let tree_hidden = true
+  let settings_opened = false
 
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
   let fileData = localStorage.getItem('calcul-meubles-file-data')
@@ -109,6 +121,7 @@
       let reader = new FileReader();
       reader.onload = (e) => {
         data     = JSON.parse(e.target.result)
+        setting.set(data.settings || {})
         filename = file.name
         fileData = e.target.result
       }
@@ -137,6 +150,15 @@
   function showTree(){
     tree_hidden = false
   }
+
+  function openSettings(){
+    window.location.hash = '#/settings'
+  }
+
+  let root_target;
+  routeDeclare((route) => {
+    return route.root ? [root_target] : []
+  })
 </script>
 
 <style>
@@ -149,7 +171,8 @@
       "tree main";
     height: 100%
   }
-  .tree-hidden.root {
+  .tree-hidden.root,
+  .settings-opened.root {
     grid-template-columns: auto;
     grid-template-areas:
       "toolbar"
@@ -169,6 +192,7 @@
     width: 15rem;
     resize: horizontal;
   }
+  .settings-opened .tree,
   .tree-hidden .tree {
     display: none;
   }
@@ -179,9 +203,6 @@
     grid-area: main;
     overflow: auto;
   }
-  #json:not(:target) {
-    display: none;
-  }
 
   @media print {
     .toolbar .button {
@@ -190,9 +211,13 @@
   }
 </style>
 
-<div class="root" class:component-hsplit={component_layout == 'hsplit'} class:tree-hidden={tree_hidden}>
+<div class="root"
+    class:component-hsplit={component_layout == 'hsplit'}
+    class:tree-hidden={tree_hidden}
+    class:settings-opened={settings_opened}>
   <div class="toolbar">
     <select on:change={moveTree} class="tree-select">
+      <option value='#/settings'>Paramètres</option>
       <TreeItemOption data={data}/>
       <option value="show">(montrer)</option>
     </select>
@@ -200,7 +225,7 @@
     <button on:click={simpleSave}>Enregistrer</button>
     <button on:click={saveAs}>Enregistrer sous...</button>
     <button on:click={open}>Ouvrir...</button>
-    <a href="#json">{filename}</a>
+    {filename}
     <a href="@" on:click|preventDefault={rename}>✎</a>
     <label style="float: right">
       Agencement :
@@ -208,16 +233,23 @@
         <option value="">À la suite</option>
         <option value="hsplit">Horizontal</option>
       </select>
+      <button on:click={openSettings}>Paramètres...</button>
     </label>
   </div>
 
   <div class="tree">
     <TreeItem data={data}/>
-    <a on:click={hideTree} href='#'>(cacher)</a>
+    <a on:click={hideTree} href='#!hideTree'>(cacher)</a>
   </div>
 
   <div class="main">
     <Ensemble name="Meuble" initdata={data} on:datachange={(e) => {data = e.detail.data}} />
-    <pre id="json">{JSON.stringify(data, null, 2)}</pre>
+    <div class="routable" bind:this={root_target}>
+      <details>
+        <summary>Contenu du fichier</summary>
+        <pre id="json">{JSON.stringify(data, null, 2)}</pre>
+      </details>
+    </div>
+    <Settings bind:settings={settings} bind:settings_opened={settings_opened} />
   </div>
 </div>

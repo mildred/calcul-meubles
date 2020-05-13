@@ -69,3 +69,24 @@ button:focus {
 option[selected], option.selected{
 	font-weight: bold;
 }
+
+.routable:not(.target):not(:target) {
+	display: none;
+}
+
+table.styled {
+	border-collapse: collapse;
+}
+table.styled th {
+	text-align: left;
+}
+table.styled th, table.styled td {
+	border: 1px solid #ddd;
+	padding: 0.2em;
+}
+table.styled tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+table.styled td:not(:first-child) {
+	white-space: nowrap;
+}

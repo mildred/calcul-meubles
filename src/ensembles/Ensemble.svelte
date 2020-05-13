@@ -72,7 +72,7 @@
     bind:pieces_drawings={pieces_drawings}
     drawings={true} />
 
-  <ListeDebit pieces={pieces} />
+  <ListeDebit pieces={new Group(pieces, `Ensemble ${data.name}`, 'Ensemble')} />
 
   <button on:click={e => add('Porte')}>Nouvelle porte</button>
   <button on:click={e => add('Caisson')}>Nouveau caisson</button>

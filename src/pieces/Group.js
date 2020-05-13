@@ -2,7 +2,8 @@ import { get_position } from './utils.js';
 
 export default class Group {
 
-  constructor(pieces, name) {
+  constructor(pieces, name, component_type) {
+    this.component_type = component_type
     this.type   = 'Group'
     this.pieces = pieces || []
     this.name   = name
@@ -13,6 +14,43 @@ export default class Group {
 
   individual() {
     return this.pieces.reduce((res, p) => res.concat(p.individual().map(p => p.prefix_name(this.name))), [])
+  }
+
+  shallow(){
+    return this.update({ pieces: this.pieces.filter(p => !(p instanceof Group)) })
+  }
+
+  flat_groups(nameprefix, total) {
+    let groups = []
+    let pieces = []
+    for(let p of this.pieces) {
+      if(p instanceof Group) {
+        groups = groups.concat(p.flat_groups(`${nameprefix || ''}${this.name} `))
+      } else {
+        pieces.push(p)
+      }
+    }
+    groups = [
+      this.update({
+        pieces: pieces,
+        name: `${nameprefix || ''}${this.name}`}),
+    ].concat(groups)
+
+    if (total) {
+      groups.push(this.update({
+        pieces: this.individual(),
+        name: `${nameprefix || ''}Total ${this.name}`}))
+    }
+
+    return groups
+  }
+
+  surface() {
+    return this.pieces.reduce((s,p) => s + p.surface(), 0)
+  }
+
+  get nombre_tenons(){
+    return this.pieces.reduce((n, p) => n + p.nombre_tenons, 0)
   }
 
   update(props) {
