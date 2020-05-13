@@ -25,12 +25,12 @@ export function routeDeclare(cb) {
     }
     previousTargets = cb(routeInfo(window.location.hash))
     if(previousTargets) for(let t of previousTargets) if(t) {
-      console.log('route to', t, t.classList)
       t.classList.add('target')
-      console.log('route to', t, t.classList)
+      console.log('route to', t)
     }
   }
 
   window.addEventListener("hashchange", onHashChange, false);
   window.addEventListener("load", onHashChange, false);
+  return onHashChange;
 }

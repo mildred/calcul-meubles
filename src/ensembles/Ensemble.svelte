@@ -53,7 +53,8 @@
 </script>
 
 <Component bind:data={data} state={state} bind:childrenState={childrenState} path={path} on:datachange>
-  <div slot="left">
+  <div slot="plan">
+    <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
     {#each pieces_drawings as pieces_d, i}
       <div data-count={pieces.length}>
         <SVGDrawing bind:zoom={zoom} pieces={pieces_d || []} name={`Dessin ${i+1}`} />
@@ -61,24 +62,25 @@
     {/each}
   </div>
 
-  <h1>Sous-ensemble</h1>
-  <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
+  <div slot="children">
+    <ChildrenPositions
+      children={children}
+      childrenState={childrenState}
+      bind:childrenPos={childrenPos}
+      bind:pieces={pieces}
+      bind:pieces_drawings={pieces_drawings}
+      drawings={true} />
 
-  <ChildrenPositions
-    children={children}
-    childrenState={childrenState}
-    bind:childrenPos={childrenPos}
-    bind:pieces={pieces}
-    bind:pieces_drawings={pieces_drawings}
-    drawings={true} />
+    <button on:click={e => add('Porte')}>Nouvelle porte</button>
+    <button on:click={e => add('Caisson')}>Nouveau caisson</button>
+    <button on:click={e => add('Etagere')}>Nouvelle étagère</button>
+    <button on:click={e => add('Facade')}>Nouvelle façade</button>
+    <button on:click={e => add('Ensemble')}>Nouveau sous-ensemble</button>
+  </div>
 
-  <ListeDebit pieces={new Group(pieces, `Ensemble ${data.name}`, 'Ensemble')} />
-
-  <button on:click={e => add('Porte')}>Nouvelle porte</button>
-  <button on:click={e => add('Caisson')}>Nouveau caisson</button>
-  <button on:click={e => add('Etagere')}>Nouvelle étagère</button>
-  <button on:click={e => add('Facade')}>Nouvelle façade</button>
-  <button on:click={e => add('Ensemble')}>Nouveau sous-ensemble</button>
+  <div slot="tables">
+    <ListeDebit pieces={new Group(pieces, `Ensemble ${data.name}`, 'Ensemble')} />
+  </div>
 </Component>
 
 

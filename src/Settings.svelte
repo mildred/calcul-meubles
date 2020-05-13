@@ -90,28 +90,33 @@
   <h2>Estimations</h2>
   {#each componentNames as component}
     <h3>{component}</h3>
-    {#each Object.entries(merged.estimations[component])
-        .map(ent => [ent[0], ent[1], def.estimations[component][ent[0]] || {value: 0, indice: ''}])
-        as [estim_name, estim, def_estim]}
-      <label>
-        <span>{estim_name}<a href="@" on:click|preventDefault={e => renameEstim(component, estim_name)}>✎</a></span>
-        <InputDuration bind:value={ui.estimations[component][estim_name].value} def={def_estim.value} />
-        <select bind:value={ui.estimations[component][estim_name].indice}>
-          <option value="">(désactivé)</option>
-          <option value="constant">une fois pour toutes</option>
-          <option value="per_component">par {component}</option>
-          <option value="m2_ep0_20">par m² de panneau (ep ⩽ 20)</option>
-          <option value="m2_ep20_plus">par m² de pièces (ep &gt; 20)</option>
-          <option value="m2_plateau">par m² (toutes pièces)</option>
-          <option value="nb_ep0_20">par panneau (ep ⩽ 20)</option>
-          <option value="nb_ep20_plus">par nombre de pièces (ep &gt; 20)</option>
-          <option value="nb_plateau">par nombre de pièces et panneaux (toutes epaisseurs)</option>
-          <option value="tenon">par tenon</option>
-        </select>
-        <button on:click={e => removeEstim(component, estim_name)}>🗑</button>
-      </label>
-    {/each}
-    <button on:click={e => addEstim(component)}>Ajouter une estimation</button>
+    <ul>
+      {#each Object.entries(merged.estimations[component])
+          .map(ent => [ent[0], ent[1], def.estimations[component][ent[0]] || {value: 0, indice: ''}])
+          as [estim_name, estim, def_estim]}
+        <li>
+          <label>
+            <span>{estim_name} : </span>
+            <InputDuration bind:value={ui.estimations[component][estim_name].value} def={def_estim.value} />
+            <select bind:value={ui.estimations[component][estim_name].indice}>
+              <option value="">(désactivé)</option>
+              <option value="constant">une fois pour toutes</option>
+              <option value="per_component">par {component}</option>
+              <option value="m2_ep0_20">par m² de panneau (ep ⩽ 20)</option>
+              <option value="m2_ep20_plus">par m² de pièces (ep &gt; 20)</option>
+              <option value="m2_plateau">par m² (toutes pièces)</option>
+              <option value="nb_ep0_20">par panneau (ep ⩽ 20)</option>
+              <option value="nb_ep20_plus">par nombre de pièces (ep &gt; 20)</option>
+              <option value="nb_plateau">par nombre de pièces et panneaux (toutes epaisseurs)</option>
+              <option value="tenon">par tenon</option>
+            </select>
+            <button on:click={e => removeEstim(component, estim_name)}>🗑</button>
+            <button on:click={e => renameEstim(component, estim_name)}>✎</button>
+          </label>
+        </li>
+      {/each}
+      <li><button on:click={e => addEstim(component)}>Ajouter un poste</button></li>
+    </ul>
   {/each}
 
   <hr/>

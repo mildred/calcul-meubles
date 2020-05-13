@@ -15,18 +15,17 @@
   setContext('App-components',  components)
 
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
-  let component_layout = 'hsplit'
   let data = {}
+
+  let tree_hidden = true
 
   let settings = writable(JSON.parse(localStorage.getItem('calcul-meubles-settings') || '{}'))
   setContext('settings', settings)
   settings.subscribe(settings => {
+    tree_hidden = settings.tree_hidden
     data.settings = settings
     localStorage.setItem('calcul-meubles-settings', JSON.stringify(settings))
   })
-
-  let tree_hidden = true
-  let settings_opened = false
 
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
   let fileData = localStorage.getItem('calcul-meubles-file-data')
@@ -134,7 +133,7 @@
   }
 
   function moveTree(e){
-    if(e.target.value == 'show') {
+    if(e.target.value == 'show-tree') {
       showTree()
       e.target.value = window.location.hash
     } else {
@@ -145,10 +144,18 @@
   function hideTree(e){
     e.preventDefault()
     tree_hidden = true
+    settings.update(settings => ({
+      ...settings,
+      tree_hidden: true,
+    }))
   }
 
   function showTree(){
     tree_hidden = false
+    settings.update(settings => ({
+      ...settings,
+      tree_hidden: false,
+    }))
   }
 
   function openSettings(){
@@ -162,27 +169,43 @@
 </script>
 
 <style>
+  button {
+    margin: 0;
+  }
+  .tree button {
+    padding: 1px;
+  }
   .root {
-    display: grid;
+    display: flex;
     grid-template-rows: 3rem auto;
-    grid-template-columns: auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "toolbar toolbar"
       "tree main";
+    flex-flow: row nowrap;
     height: 100%
   }
-  .tree-hidden.root,
-  .settings-opened.root {
+  .tree-hidden.root {
+    display: grid;
     grid-template-columns: auto;
     grid-template-areas:
       "toolbar"
       "main";
+  }
+  .root:not(.tree-hidden) .tree {
+    flex: 0 0 auto
   }
   .toolbar {
     padding: 4px;
     grid-area: toolbar;
     background-color: var(--light-bg-color);
     border-bottom: solid 1px var(--border-color);
+  }
+  .open-save-buttons {
+    display: grid;
+    align-content: stretch;
+    grid-template-rows: repeat(2, 50fr);
+    grid-template-columns: repeat(2, auto);
   }
   .tree {
     grid-area: tree;
@@ -192,7 +215,12 @@
     width: 15rem;
     resize: horizontal;
   }
-  .settings-opened .tree,
+  .tree :global(ul) {
+    padding-left: 1em;
+  }
+  .tree :global(ul) :global(ul) {
+    /*border-left: solid 1px var(--border-color);*/
+  }
   .tree-hidden .tree {
     display: none;
   }
@@ -200,8 +228,10 @@
     display: none;
   }
   .main {
+    flex: 1 1 auto;
     grid-area: main;
     overflow: auto;
+    justify-self: stretch;
   }
 
   @media print {
@@ -212,34 +242,45 @@
 </style>
 
 <div class="root"
-    class:component-hsplit={component_layout == 'hsplit'}
-    class:tree-hidden={tree_hidden}
-    class:settings-opened={settings_opened}>
+    class:tree-hidden={tree_hidden}>
+
+  {#if tree_hidden}
   <div class="toolbar">
     <select on:change={moveTree} class="tree-select">
       <option value='#/settings'>Paramètres</option>
       <TreeItemOption data={data}/>
-      <option value="show">(montrer)</option>
+      <option value="show-tree">(montrer)</option>
     </select>
     <button on:click={clear}>Nouveau</button>
     <button on:click={simpleSave}>Enregistrer</button>
     <button on:click={saveAs}>Enregistrer sous...</button>
     <button on:click={open}>Ouvrir...</button>
-    {filename}
-    <a href="@" on:click|preventDefault={rename}>✎</a>
+    {filename} <a href="@" on:click|preventDefault={rename}>✎</a>
     <label style="float: right">
-      Agencement :
-      <select bind:value={component_layout}>
-        <option value="">À la suite</option>
-        <option value="hsplit">Horizontal</option>
-      </select>
       <button on:click={openSettings}>Paramètres...</button>
     </label>
   </div>
+  {/if}
 
   <div class="tree">
-    <TreeItem data={data}/>
-    <a on:click={hideTree} href='#!hideTree'>(cacher)</a>
+    {#if !tree_hidden}
+      <div class="open-save-buttons">
+      <button on:click={simpleSave}>Enregistrer</button>
+      <button on:click={saveAs}>Enregistrer sous...</button>
+      <button on:click={clear}>Nouveau</button>
+      <button on:click={open}>Ouvrir...</button>
+      </div>
+      <p>{filename} <a href="@" on:click|preventDefault={rename}>✎</a></p>
+    {/if}
+    <ul>
+      <li>
+        <TreeItem data={data}/>
+      </li>
+      {#if !tree_hidden}
+        <li><a href="@" on:click|preventDefault={openSettings}>Paramètres...</a></li>
+      {/if}
+      <li><a on:click={hideTree} href='#!hideTree'>cacher</a></li>
+    </ul>
   </div>
 
   <div class="main">
@@ -250,6 +291,6 @@
         <pre id="json">{JSON.stringify(data, null, 2)}</pre>
       </details>
     </div>
-    <Settings bind:settings={settings} bind:settings_opened={settings_opened} />
+    <Settings bind:settings={settings} />
   </div>
 </div>

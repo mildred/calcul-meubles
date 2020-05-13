@@ -63,17 +63,18 @@
 </style>
 
 <Component bind:data={data} path={path} state={state} on:datachange>
-  <div slot="left">
+  <div slot="plan">
     <SVGDrawing pieces={pieces} name={`Façade ${data.name}`} />
   </div>
 
-  <div class="main">
+  <div class="main" slot="dim">
     <form style="float: left">
     <label><span>Largeur    : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
     <label><span>Hauteur    : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>
     <label><span>Épaisseur  : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.epaisseur} force={defaults.force_epaisseur}/> mm</label>
+  </div>
 
-    <hr class="clear"/>
+  <div slot="tables">
     <ListeDebit pieces={new Group(pieces, `Façade ${data.name}`, 'Facade')} />
   </div>
 </Component>

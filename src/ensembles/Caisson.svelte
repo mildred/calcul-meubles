@@ -931,11 +931,11 @@
 </style>
 
 <Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} on:datachange>
-  <div slot="left">
+  <div slot="plan">
     <SVGDrawing pieces={all_pieces} name={`Caisson ${data.name}`} />
   </div>
 
-  <div class="main">
+  <div class="main" slot="dim">
 
     <h3>Mesures</h3>
 
@@ -1156,14 +1156,18 @@
     <label><span>Longueur tenons cloisons : </span> <InputNumber def={opt.montants_inter_longueur_tenon} bind:value={ui.montants_inter_longueur_tenon} min=0/> mm</label>
 
     </form>
+  </div>
 
+  <div slot="children">
     <ChildrenPositions
       children={children}
       childrenState={childrenState}
       defaultChildrenPos={children.map(c => c.defaultPosition)}
       bind:childrenPos={childrenPos}
       bind:pieces={child_pieces} />
+  </div>
 
+  <div slot="tables">
     <ListeDebit pieces={new Group(all_pieces, `Caisson ${data.name}`, 'Caisson')} />
   </div>
 </Component>

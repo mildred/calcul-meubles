@@ -141,7 +141,7 @@
 </style>
 
 <Component bind:data={data} state={state} path={path} on:datachange>
-  <div slot="left">
+  <div slot="plan">
     <SVGDrawing pieces={pieces} name={`Porte ${data.name}`} />
 
     <!--<img src="porte.svg" />-->
@@ -189,7 +189,7 @@
     </svg>
   </div>
 
-  <div class="main">
+  <div class="main" slot="dim">
     <form style="float: left">
     <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
     <label>
@@ -218,7 +218,9 @@
     {/if}
     <label><span>Inclure le paneau</span><InputCheckbox bind:checked={ui.inclure_panneau} def={defaults.inclure_panneau} /></label>
     </form>
+  </div>
 
+  <div slot="tables">
     <ListeDebit pieces={new Group(pieces, `Porte ${data.name}`, 'Porte')} />
   </div>
 </Component>
