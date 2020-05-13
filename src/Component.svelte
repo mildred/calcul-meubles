@@ -42,9 +42,7 @@
   // list, it removes any manually set classes with the classList API.
   let target = false
   routeDeclare(route => {
-    if(route.component_selector) {
-      target = (route.component_path == path)
-    }
+    target = (route.component_path == path)
   })
 
   function setLayout(e, name){

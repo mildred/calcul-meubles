@@ -18,15 +18,19 @@
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
   let data = {}
 
-  let tree_hidden = true
+  let agencement = 'horizontal'
 
   let settings = writable(JSON.parse(localStorage.getItem('calcul-meubles-settings') || '{}'))
   setContext('settings', settings)
   settings.subscribe(settings => {
-    tree_hidden = settings.tree_hidden
+    if(agencement != settings.agencement) agencement = settings.agencement
     data.settings = settings
     localStorage.setItem('calcul-meubles-settings', JSON.stringify(settings))
   })
+  $: settings.update(settings => ({
+      ...settings,
+      agencement: agencement,
+    }))
 
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
   let fileData = localStorage.getItem('calcul-meubles-file-data')
@@ -134,29 +138,7 @@
   }
 
   function moveTree(e){
-    if(e.target.value == 'show-tree') {
-      showTree()
-      e.target.value = window.location.hash
-    } else {
-      window.location.hash = e.target.value
-    }
-  }
-
-  function hideTree(e){
-    e.preventDefault()
-    tree_hidden = true
-    settings.update(settings => ({
-      ...settings,
-      tree_hidden: true,
-    }))
-  }
-
-  function showTree(){
-    tree_hidden = false
-    settings.update(settings => ({
-      ...settings,
-      tree_hidden: false,
-    }))
+    window.location.hash = e.target.value
   }
 
   function openSettings(){
@@ -170,10 +152,10 @@
 </script>
 
 <style>
-  button {
+  button, select {
     margin: 0;
   }
-  .tree button {
+  .tree button, .tree select {
     padding: 1px;
   }
   .root {
@@ -186,14 +168,14 @@
     flex-flow: row nowrap;
     height: 100%
   }
-  .tree-hidden.root {
+  .agencement-horizontal.root {
     display: grid;
     grid-template-columns: auto;
     grid-template-areas:
       "toolbar"
       "main";
   }
-  .root:not(.tree-hidden) .tree {
+  .root.agencement-vertical .tree {
     flex: 0 0 auto
   }
   .toolbar {
@@ -222,10 +204,10 @@
   .tree :global(ul) :global(ul) {
     /*border-left: solid 1px var(--border-color);*/
   }
-  .tree-hidden .tree {
+  .agencement-horizontal .tree {
     display: none;
   }
-  .root:not(.tree-hidden) .tree-select {
+  .root.agencement-vertical .tree-select {
     display: none;
   }
   .main {
@@ -244,34 +226,44 @@
   }
 </style>
 
-<div class="root"
-    class:tree-hidden={tree_hidden}>
+<div class="root agencement-{agencement}">
 
-  {#if tree_hidden}
+  {#if agencement == 'horizontal'}
   <div class="toolbar">
     <select on:change={moveTree} class="tree-select">
       <option value='#/settings'>Paramètres</option>
       <TreeItemOption data={data}/>
-      <option value="show-tree">(montrer)</option>
     </select>
     <button on:click={clear}>Nouveau</button>
     <button on:click={simpleSave}>Enregistrer</button>
     <button on:click={saveAs}>Enregistrer sous...</button>
     <button on:click={open}>Ouvrir...</button>
     {filename} <a href="@" on:click|preventDefault={rename}>✎</a>
-    <label style="float: right">
+    <div style="float: right">
+      <label style="display: inline">
+        Agencement :
+        <select bind:value={agencement}>
+          <option value='horizontal'>Horizontal</option>
+          <option value='vertical'>Vertical</option>
+        </select>
+      </label>
       <button on:click={openSettings}>Paramètres...</button>
-    </label>
+    </div>
   </div>
   {/if}
 
   <div class="tree">
-    {#if !tree_hidden}
+    {#if agencement == 'vertical'}
       <div class="open-save-buttons">
-      <button on:click={simpleSave}>Enregistrer</button>
-      <button on:click={saveAs}>Enregistrer sous...</button>
-      <button on:click={clear}>Nouveau</button>
-      <button on:click={open}>Ouvrir...</button>
+        <select bind:value={agencement}>
+          <option value='horizontal'>Agencement horizontal</option>
+          <option value='vertical'>Agencement vertical</option>
+        </select>
+        <button on:click={openSettings}>Paramètres...</button>
+        <button on:click={simpleSave}>Enregistrer</button>
+        <button on:click={saveAs}>Enregistrer sous...</button>
+        <button on:click={clear}>Nouveau</button>
+        <button on:click={open}>Ouvrir...</button>
       </div>
       <p>{filename} <a href="@" on:click|preventDefault={rename}>✎</a></p>
     {/if}
@@ -279,10 +271,9 @@
       <li>
         <TreeItem data={data}/>
       </li>
-      {#if !tree_hidden}
+      {#if agencement == 'vertical'}
         <li><a href="@" on:click|preventDefault={openSettings}>Paramètres...</a></li>
       {/if}
-      <li><a on:click={hideTree} href='#!hideTree'>cacher</a></li>
     </ul>
   </div>
 

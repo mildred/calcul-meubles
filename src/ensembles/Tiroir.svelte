@@ -140,7 +140,7 @@
   </div>
 
   <div class="main" slot="dim">
-    <form style="float: left">
+    <form>
     <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
     <hr/>
     <label><span>Largeur logement   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
