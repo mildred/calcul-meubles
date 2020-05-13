@@ -135,6 +135,13 @@
     display: flex;
     flex-flow: row nowrap;
   }
+
+  @media print {
+    .component, .component-grid, .component-grid > * {
+      display: block !important;
+      overflow: visible !important;
+    }
+  }
 </style>
 
 <div class="routable component layout-{layout}" class:target={target} id="component-{path}">

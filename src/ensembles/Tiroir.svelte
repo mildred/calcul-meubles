@@ -19,11 +19,16 @@
   let defaults = {
     quantite: 1,
     largeur: 400,
-    hauteur: 100,
+    hauteur: 150,
+    hauteur_tir_max: 150,
     profondeur: 500,
-    epaisseur: 18,
-    profondeur_rainure: 10,
+    epaisseur: 15,
+    profondeur_rainure: 9,
+    profondeur_queues_arrondes: 10,
     jeu_rainure: 1,
+    jeu_lateral: 6,
+    jeu_dessous: 28,
+    jeu_dessus: 7,
     epaisseur_fond: 10,
     inclure_fond: true,
     ...initdata.defaults
@@ -31,11 +36,18 @@
 
   let opt = { ...initdata.opt }
   let ui  = { ...(initdata.ui || initdata.opt) }
+  let tir = {}
+
+  $: tir = calculTiroir({
+      ...defaults,
+      ...cleanObject(ui)
+    })
 
   $: opt = {
-    ...defaults,
-    ...cleanObject(ui)
-  }
+      ...defaults,
+      ...tir,
+      ...cleanObject(ui),
+    }
 
   $: data.opt = opt
   $: data.ui  = ui
@@ -43,34 +55,53 @@
 
   $: cote = new Piece()
     .add_name("Coté")
-    .build(opt.profondeur, opt.hauteur, opt.epaisseur)
+    .build(
+      opt.profondeur_tir - 2 * (opt.epaisseur - opt.profondeur_queues_arrondes),
+      opt.hauteur_tir,
+      opt.epaisseur)
   $: cote_g = cote
     .add_name("gauche")
-    .put(0, 0, 0, 'zyx')
+    .put(
+      opt.jeu_lateral,
+      opt.jeu_dessous,
+      opt.epaisseur - opt.profondeur_queues_arrondes,
+      'zyx')
   $: cote_d = cote
     .add_name("droit")
-    .put(opt.largeur - opt.epaisseur, 0, 0, 'zyx')
+    .put(
+      opt.jeu_lateral + opt.largeur_tir - opt.epaisseur,
+      opt.jeu_dessous,
+      opt.epaisseur - opt.profondeur_queues_arrondes,
+      'zyx')
 
   $: face = new Piece()
     .add_name("Face")
-    .build(opt.largeur, opt.hauteur, opt.epaisseur);
+    .build(opt.largeur_tir, opt.hauteur_tir, opt.epaisseur);
   $: face_av = face
     .add_name("avant")
-    .put(0, 0, 0, 'xyz')
+    .put(
+      opt.jeu_lateral,
+      opt.jeu_dessous,
+      0,
+      'xyz')
   $: face_ar = face
     .add_name("arrière")
-    .put(0, 0, opt.profondeur - opt.epaisseur, 'xyz')
+    .put(
+      opt.jeu_lateral,
+      opt.jeu_dessous,
+      opt.profondeur_tir - opt.epaisseur,
+      'xyz')
 
   $: fond = new Piece()
     .add_name("Fond tiroir")
     .build(
-      opt.largeur - 2 * (opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure),
-      opt.profondeur - 2 * (opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.largeur_tir - 2 * (opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure),
+      opt.profondeur_tir - (opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure),
       opt.epaisseur_fond)
     .put(
-      opt.profondeur_rainure + opt.jeu_rainure,
-      opt.profondeur_rainure + opt.jeu_rainure,
-      0,
+      opt.jeu_lateral + opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure,
+      opt.jeu_dessous,
+      opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure,
       'xzy')
 
   $: pieces = [
@@ -81,6 +112,13 @@
 
   $: pieces_group = new Group(pieces, `Tiroir ${data.name}`, 'Tiroir')
   $: state.pieces_group = pieces_group
+
+  function calculTiroir(opt){
+    let largeur_tir = opt.largeur - 2 * opt.jeu_lateral
+    let profondeur_tir = opt.profondeur - (opt.profondeur % 50)
+    let hauteur_tir = Math.min(opt.hauteur_tir_max, opt.hauteur - opt.jeu_dessous - opt.jeu_dessus)
+    return {largeur_tir, profondeur_tir, hauteur_tir}
+  }
 
 </script>
 
@@ -104,10 +142,17 @@
   <div class="main" slot="dim">
     <form style="float: left">
     <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
-    <label><span>Largeur   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
-    <label><span>Hauteur   : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>
-    <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.profondeur} force={defaults.force_profondeur}/> mm</label>
     <hr/>
+    <label><span>Largeur logement   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
+    <label><span>Hauteur logement  : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>
+    <label><span>Profondeur logement : </span><InputNumber min=0 bind:value={ui.profondeur} def={defaults.profondeur} force={defaults.force_profondeur}/> mm</label>
+    <hr/>
+    <label><span>Largeur   : </span><InputNumber min=0 bind:value={ui.largeur_tir} def={tir.largeur_tir}/> mm</label>
+    <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.profondeur_tir} def={tir.profondeur_tir}/> mm</label>
+    <label><span>Hauteur   : </span><InputNumber min=0 bind:value={ui.hauteur_tir} def={tir.hauteur_tir}/> mm</label>
+    <label><span>Hauteur max : </span><InputNumber min=0 bind:value={ui.hauteur_tir_max} def={defaults.hauteur_tir_max}/> mm</label>
+    <hr/>
+    <label><span>Profondeur queues d'arrondes : </span><InputNumber min=0 bind:value={ui.profondeur_queues_arrondes} def={defaults.profondeur_queues_arrondes}/> mm</label>
     <label><span>Épaisseur : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.epaisseur} force={defaults.force_epaisseur}/> mm</label>
     <label><span>Épaisseur fond : </span><InputNumber min=0 bind:value={ui.epaisseur_fond} def={defaults.epaisseur_fond}/> mm</label>
     <label><span>Profondeur rainures : </span><InputNumber min=0 bind:value={ui.profondeur_rainure} def={defaults.profondeur_rainure}/> mm</label>

@@ -236,8 +236,10 @@
   }
 
   @media print {
-    .toolbar .button {
-      display: none;
+    .root, .main {
+      display: block !important;
+      overflow: visible !important;
+      height: auto;
     }
   }
 </style>

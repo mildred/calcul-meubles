@@ -57,12 +57,16 @@
             nb_pieces: pieces_par_epaisseur[epaisseur].length,
             surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.surface(), 0)
           }))
+        const {xmin, xmax, ymin, ymax, zmin, zmax} = group.bounding_box()
         return {
-          name:       group.name,
-          nb_tenons:  group.pieces.reduce((n, p) => n + p.nombre_tenons, 0),
-          nb_pieces:  group.pieces.length,
-          surface:    group.surface(),
-          epaisseurs: stats_epaisseur,
+          name:        group.name,
+          dimension_x: xmax - xmin,
+          dimension_y: ymax - ymin,
+          dimension_z: zmax - zmin,
+          nb_tenons:   group.pieces.reduce((n, p) => n + p.nombre_tenons, 0),
+          nb_pieces:   group.pieces.length,
+          surface:     group.surface(),
+          epaisseurs:  stats_epaisseur,
         }
       })
       .filter(stat => stat.nb_pieces > 0)
@@ -79,10 +83,11 @@
   }
 </style>
 
-<table class="styled">
+<table class="large styled">
   <caption>Statistiques pour {pieces.name} (<label style="display: inline"><input bind:checked={totaux} type=checkbox /> afficher totaux</label>)</caption>
   <tr>
     <th rowspan=2>Ensemble</th>
+    <th rowspan=2>Dimensions</th>
     <th rowspan=2>Nombre de pièces</th>
     <th rowspan=2>Nombre de tenons</th>
     <th rowspan=2>Surface des pièces</th>
@@ -99,20 +104,25 @@
   {#each statistics as stat}
     <tr>
       <td>{stat.name}</td>
+      <td>{stat.dimension_x} x {stat.dimension_y} x {stat.dimension_z}</td>
       <td>{stat.nb_pieces}</td>
       <td>{stat.nb_tenons}</td>
-      <td>{stat.surface.toPrecision(6)}</td>
+      <td>{stat.surface.toFixed(6)}</td>
       {#each statistics_epaisseurs as ep}
         <td>{(stat.epaisseurs.find(e => e.epaisseur == ep)||{}).nb_pieces || 0}</td>
-        <td>{((stat.epaisseurs.find(e => e.epaisseur == ep)||{}).surface || 0).toPrecision(6)}</td>
+        <td>{((stat.epaisseurs.find(e => e.epaisseur == ep)||{}).surface || 0).toFixed(6)}</td>
       {/each}
     </tr>
   {/each}
 </table>
 
+<hr/>
+
 <Estimation pieces={pieces} bind:estimations={estimations} />
 
-<table class="styled">
+<hr/>
+
+<table class="large styled">
   <caption>Liste de débit</caption>
   <tr>
     <th>Pièce (<label style="display: inline"><input bind:checked={separer} type=checkbox /> séparer</label>)</th>
@@ -141,8 +151,8 @@
     <td>{piece.string_arrasement()}</td>
     <td>{piece.largeur * piece.longueur / 1e6}</td>
     <td>{piece.epaisseur_plateau}</td>
-    <td>{piece.que * piece.cubage(cubemargin/100).toPrecision(9)}</td>
-    <td>{piece.que * piece.prix(cubeprice, cubemargin/100).toPrecision(2)}</td>
+    <td>{piece.que * piece.cubage(cubemargin/100).toFixed(9)}</td>
+    <td>{piece.que * piece.prix(cubeprice, cubemargin/100).toFixed(2)}</td>
   </tr>
   {/each}
   <tr>
@@ -152,7 +162,7 @@
     <td></td>
     <td></td>
     <td></td>
-    <td>{total_cube.toPrecision(9)}</td>
-    <td>{total_prix.toPrecision(2)}</td>
+    <td>{total_cube.toFixed(9)}</td>
+    <td>{total_prix.toFixed(2)}</td>
   </tr>
 </table>

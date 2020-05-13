@@ -27,8 +27,10 @@
     profondeur_tenons: 30,
     profondeur_rainure: 10,
     profondeur_profil: 15,
+    encastree: false,
+    jeu_encastrement: 2,
     jeu_rainure: 1,
-    epaisseur_panneau: 10,
+    epaisseur_panneau: 15,
     inclure_panneau: true,
     ...initdata.defaults
   }
@@ -53,27 +55,29 @@
 
   let zoom = 0.25
 
+  $: jeu_encastrement = opt.encastree ? opt.jeu_encastrement : 0
+
   $: montant = new Piece()
     .add_name("Montant")
-    .build(opt.hauteur, opt.largeur_montants, opt.epaisseur)
+    .build(opt.hauteur - 2*jeu_encastrement, opt.largeur_montants, opt.epaisseur)
   $: montant_g = montant
     .add_name("gauche")
-    .put(0, 0, 0, 'yxz')
+    .put(jeu_encastrement, jeu_encastrement, 0, 'yxz')
   $: montant_d = montant
     .add_name("droit")
-    .put(opt.largeur - opt.largeur_montants, 0, 0, 'yxz')
+    .put(jeu_encastrement + opt.largeur - opt.largeur_montants, jeu_encastrement, 0, 'yxz')
 
   $: traverse =
     (opt.type == 'contre-profil')  ? new Piece()
       .add_name("Traverse")
       .build(
-        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil),
+        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil) - 2*jeu_encastrement,
         0,
         opt.epaisseur):
     (opt.type == 'tenon-mortaise') ? new Piece()
       .add_name("Traverse")
       .build(
-        opt.largeur - 2 * opt.largeur_montants,
+        opt.largeur - 2 * opt.largeur_montants - 2*jeu_encastrement,
         0,
         opt.epaisseur)
       .ajout_tenons(opt.profondeur_tenons):
@@ -85,17 +89,18 @@
   $: traverse_h = traverse
     .add_name("haut")
     .build(null, opt.largeur_traverse_h)
-    .put(traverse_xpos, opt.hauteur-opt.largeur_traverse_h, 0, 'xyz')
+    .put(jeu_encastrement + traverse_xpos, jeu_encastrement + opt.hauteur-opt.largeur_traverse_h, 0, 'xyz')
   $: traverse_b = traverse
     .add_name("bas")
     .build(null, opt.largeur_traverse_b)
-    .put(traverse_xpos, 0, 0, 'xyz')
+    .put(jeu_encastrement + traverse_xpos, jeu_encastrement, 0, 'xyz')
   $: panneau = (
     (opt.type == 'contre-profil')  ? new Piece()
       .build(
-        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure) - 2*jeu_encastrement,
         opt.hauteur + 2 * (opt.profondeur_rainure - opt.jeu_rainure)
-          - opt.largeur_traverse_h - opt.largeur_traverse_b,
+          - opt.largeur_traverse_h - opt.largeur_traverse_b
+          - 2*jeu_encastrement,
         opt.epaisseur_panneau):
     (opt.type == 'tenon-mortaise') ? new Piece()
       .build(
@@ -106,8 +111,8 @@
     new Piece())
     .add_name("Panneau")
     .put(
-      montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
-      traverse_b.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+      jeu_encastrement + montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
+      jeu_encastrement + traverse_b.largeur - opt.profondeur_rainure + opt.jeu_rainure,
       0,
       'xyz')
 
@@ -217,6 +222,9 @@
     <label><span>Profondeur profil : </span><InputNumber min=0 bind:value={ui.profondeur_profil} def={defaults.profondeur_profil}/> mm</label>
     {/if}
     <label><span>Inclure le paneau</span><InputCheckbox bind:checked={ui.inclure_panneau} def={defaults.inclure_panneau} /></label>
+    <hr/>
+    <label><span>Encastrée</span><InputCheckbox bind:checked={ui.encastree} def={defaults.encastree} /></label>
+    <label><span>jeu encastrement (tout autour) : </span><InputNumber min=0 bind:value={ui.jeu_encastrement} def={defaults.jeu_encastrement}/> mm</label>
     </form>
   </div>
 

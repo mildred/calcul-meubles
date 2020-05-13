@@ -154,7 +154,7 @@
   let children = data.children
   $: children = pipeline(
     children,
-    children => calculPortes(opt, children))
+    children => calculPortesTiroirs(opt, children))
 
   let childrenPos = data.childrenPos
 
@@ -420,7 +420,7 @@
     }
   }
 
-  function calculPortes(opt, children){
+  function calculPortesTiroirs(opt, children){
     //console.log(`Caisson(${path}) Recalcul des portes %o`, opt)
     children = [...(children || [])]
 
@@ -437,69 +437,100 @@
       for(let j = 0; j < colonne.casiers.length; j++) {
         const casier = colonne.casiers[j]
         children = creePorteCasier(colonne, i, casier, j, children)
+        children = creeTiroirCasier(colonne, i, casier, j, children)
       }
     }
 
     // Update values
     for(let i = 0; i < children.length; i++){
       const source = children[i].source
-      let type
-
-      switch(source[0]) {
-        default: break
-        case 'Porte':
-          type = 'Porte'
-          break
-        case 'Facade':
-          type = 'Facade'
-          break
-      }
+      let type = source[0]
 
       let defaults
       let defaultPosition
-      let epaisseur_porte = (children[i].opt || {}).epaisseur || opt.epaisseur_montants
+      let epaisseur_porte
+
+      switch(type) {
+        default: break
+        case 'Porte':
+        case 'Facade':
+          epaisseur_porte = (children[i].opt || {}).epaisseur || (children[i].opt || {}).epaisseur_montants
+          break
+        case 'Tiroir':
+          break
+      }
 
       switch(source[1]){
         default: break
 
         case 'col':
         case 'colonne':
+          const i = source[2]
           const col = opt.colonnes[source[2]]
+
           switch(source[3]){
             case 'cas':
             case 'casier':
+              const j = source[4]
               const cas = col.casiers[source[4]]
-              defaults = {
-                force_largeur: true,
-                force_hauteur: true,
-                largeur:
-                  (cas.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
-                  (cas.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
-                  (cas.porte.type == 'encastre') ? col.largeur
-                                                 : 0,
-                hauteur:
-                  (cas.porte.type == 'total')    ? cas.hauteur + 2 * opt.epaisseur_montants :
-                  (cas.porte.type == 'demi')     ? cas.hauteur + opt.epaisseur_montants :
-                  (cas.porte.type == 'encastre') ? cas.hauteur
-                                                 : 0,
-              }
-              defaultPosition = {
-                x: cas.xpos
-                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
-                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
-                                                  : 0),
-                y: cas.ypos
-                   - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
-                      (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
-                                                  : 0),
-                z: opt.profondeur
-                   - ((cas.porte.type == 'encastre') ? epaisseur_porte : 0),
+
+              switch(type) {
+                case 'Tiroir':
+                  let facade = children.find(c => c.source.join('-') == `${typePorte(cas)}-col-${i}-cas-${j}`) || {}
+                  epaisseur_porte = facade ? ((facade.opt || {}).epaisseur || (facade.opt || {}).epaisseur_montants) : 0
+                  defaults = {
+                    force_largeur: true,
+                    force_hauteur: true,
+                    largeur: col.largeur,
+                    hauteur: Math.min(150, cas.hauteur),
+                    profondeur: opt.profondeur -
+                      ((cas.porte.type == 'encastre') ? epaisseur_porte : 0),
+                  }
+                  defaultPosition = {
+                    x: cas.xpos,
+                    y: cas.ypos,
+                    z: (cas.porte.type == 'encastre') ? epaisseur_porte : 0,
+                  }
+                  break
+
+                case 'Facade':
+                case 'Porte':
+                  defaults = {
+                    force_largeur: true,
+                    force_hauteur: true,
+                    encastree: (cas.porte.type == 'encastre'),
+                    largeur:
+                      (cas.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
+                      (cas.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
+                      (cas.porte.type == 'encastre') ? col.largeur
+                                                     : 0,
+                    hauteur:
+                      (cas.porte.type == 'total')    ? cas.hauteur + 2 * opt.epaisseur_montants :
+                      (cas.porte.type == 'demi')     ? cas.hauteur + opt.epaisseur_montants :
+                      (cas.porte.type == 'encastre') ? cas.hauteur
+                                                     : 0,
+                  }
+                  defaultPosition = {
+                    x: cas.xpos
+                       - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
+                          (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                                                      : 0),
+                    y: cas.ypos
+                       - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
+                          (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
+                                                      : 0),
+                    z: opt.profondeur
+                       - ((cas.porte.type == 'encastre') ? epaisseur_porte : 0),
+                  }
+                  break
               }
               break
+
             default:
               defaults = {
                 force_largeur: true,
                 force_hauteur: true,
+                encastree: (cas.porte.type == 'encastre'),
                 largeur:
                   (col.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
                   (col.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
@@ -560,8 +591,12 @@
       return children
     }
 
+    function typePorte(casier){
+      return casier.porte.facade ? 'Facade' : 'Porte'
+    }
+
     function creePorteCasier(colonne, i, casier, j, children){
-      const type = casier.porte.facade ? 'Facade' : 'Porte'
+      const type = typePorte(casier)
       const child_idx = children.findIndex(c => c.source.join('-') == `${type}-col-${i}-cas-${j}`)
 
       // Supprimer la facade si elle n'est pas du bon type
@@ -590,6 +625,33 @@
         source: [type, 'col', i, 'cas', j],
         name:   prompt(`Quel nom donner à la ${type.toLowerCase()} ?`, `colonne n°${i+1}, casier n°${j+1}`),
         type:   colonne.porte.type,
+        id:     nextId(children),
+      }]
+
+      return children
+    }
+
+    function creeTiroirCasier(colonne, i, casier, j, children){
+      const child_idx = children.findIndex(c => c.source.join('-') == `Tiroir-col-${i}-cas-${j}`)
+
+      // Supprimer le tiroir si il n'existe pas
+      // Si il existe, return
+
+      if (!casier.tiroir) {
+        // Pas de tiroir
+        if (child_idx != -1 && confirm(`Supprimer le tiroir ${children[child_idx].name} ?`)) {
+          children.splice(child_idx, 1)
+        }
+        return children
+      }
+      if (child_idx != -1) return children; // Tiroir trouvé
+
+      // Créer le tiroir si il n'est pas encore créé
+
+      children = [...children, {
+        source: ['Tiroir', 'col', i, 'cas', j],
+        name:   prompt(`Quel nom donner au tiroir ?`, `colonne n°${i+1}, casier n°${j+1}`),
+        type:   'Tiroir',
         id:     nextId(children),
       }]
 
@@ -1087,7 +1149,7 @@
           <label><InputCheckbox tristate={false}
             def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
             bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
-            /> tiroir (pour décaler les traverses)</label>
+            /> tiroir</label>
           {#if selection_casier_j == 0}
           <label><InputCheckbox tristate={false}
             def={opt.panneau_dessus}

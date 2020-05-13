@@ -17,7 +17,7 @@
   }
 </script>
 
-<table class="styled">
+<table class="large styled">
   <caption>Estimations pour {pieces.name}</caption>
   {#each estimations.components as estim_comp}
     <tr>
@@ -29,7 +29,7 @@
       <tr>
         <th></th>
         <th>{estim.name}</th>
-        <td>{estim.base_value.toPrecision(4)} {estim.base_unit}</td>
+        <td>{estim.base_value.toFixed(4)} {estim.base_unit}</td>
         <td>{temps(estim.value)} / {estim.base_unit}</td>
         <td>{temps(estim.computed)}</td>
       </tr>
