@@ -14,7 +14,8 @@
   export let state = {}
   let childrenState = []
 
-  let data = {
+  let data = {}
+  $: data = {
     children: [],
     childrenPos: [],
     type: 'Ensemble',
@@ -82,6 +83,12 @@
   <div slot="tables">
     <ListeDebit pieces={new Group(pieces, `Ensemble ${data.name}`, 'Ensemble')} />
   </div>
+
+  <details>
+    <summary>data</summary>
+    <pre>data = {JSON.stringify(data, null, 2)}</pre>
+    <pre>initdata = {JSON.stringify(initdata, null, 2)}</pre>
+  </details>
 </Component>
 
 

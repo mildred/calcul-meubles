@@ -183,7 +183,12 @@
       {/if}
     </div>
   </div>
+  <details>
+    <summary>data</summary>
+    <pre>{JSON.stringify(data, null, 2)}</pre>
+  </details>
 </div>
+
 
 {#if data.children && data.children.length}
 {#each data.children as child, i}

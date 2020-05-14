@@ -75,9 +75,6 @@
     ui.estimations[compName][estimName] = null
     merged.estimations[compName][estimName] = null
   }
-
-  $: console.log('ui', ui)
-  $: console.log('merged', merged)
 </script>
 
 <div class="routable" bind:this={root_element}>

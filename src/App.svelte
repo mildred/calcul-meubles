@@ -40,13 +40,16 @@
   }
 
   $: localStorage.setItem('calcul-meubles-data', JSON.stringify({data: data, filename: filename}))
+  $: localStorage.setItem('calcul-meubles-file-data', fileData)
 
   function clear(){
     if(!isSaved()) {
-      alert("Fichier non enregistré, veuillez enregistrer le fichier avant d'en créer un nouveau.")
-      return
+      if(!confirm("Fichier non enregistré, voulez-vous continuer et perdre les modifications en cours?")) return
+      localStorage.setItem('calcul-meubles-data-backup', localStorage.getItem('calcul-meubles-data'))
+      localStorage.setItem('calcul-meubles-file-data-backup', localStorage.getItem('calcul-meubles-file-data'))
     }
     localStorage.removeItem('calcul-meubles-data')
+    localStorage.removeItem('calcul-meubles-file-data')
     window.location.reload()
   }
 
@@ -70,8 +73,11 @@
   }
 
   function isSaved(){
+    if(data.children.length == 0) return true;
     let json = JSON.stringify(data, null, 2)
-    return (json == fileData)
+    if (json == fileData) return true;
+    console.log("isSaved() = false", json, fileData)
+    return false;
   }
 
   function simpleSave(){
@@ -81,10 +87,10 @@
   }
 
   function save(saveAs){
-    let json = JSON.stringify(data, null, 2)
-    if(!saveAs && json == fileData){
+    if(!saveAs && isSaved()){
       return 'already-saved';
     }
+    let json = JSON.stringify(data, null, 2)
 
     if(saveAs && !rename()) return 'cancelled';
 
@@ -125,7 +131,7 @@
       let reader = new FileReader();
       reader.onload = (e) => {
         data     = JSON.parse(e.target.result)
-        setting.set(data.settings || {})
+        settings.set(data.settings || {})
         filename = file.name
         fileData = e.target.result
       }
