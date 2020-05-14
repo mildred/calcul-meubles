@@ -23,7 +23,7 @@
   let settings = writable(JSON.parse(localStorage.getItem('calcul-meubles-settings') || '{}'))
   setContext('settings', settings)
   settings.subscribe(settings => {
-    if(agencement != settings.agencement) agencement = settings.agencement
+    if(settings.agencement && agencement != settings.agencement) agencement = settings.agencement
     data.settings = settings
     localStorage.setItem('calcul-meubles-settings', JSON.stringify(settings))
   })

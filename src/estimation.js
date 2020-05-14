@@ -8,7 +8,7 @@ export function calculEstimations(settings, pieces) {
 
 export function calculShallowGroupEstimations(settings, group, constants) {
   let type = group.component_type
-  let postes = Object.entries(settings.estimations[type] || {})
+  let postes = Object.entries((settings.estimations || {})[type] || {})
     .map(estim => ({...estim[1], name: estim[0], type: type}))
     .map(estim => ({
       ...estim,
