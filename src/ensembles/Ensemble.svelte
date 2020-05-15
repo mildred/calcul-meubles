@@ -32,15 +32,15 @@
   // invalidated, although defaults was never modified. The solution is to hide
   // to svelte the relationship between those two properties in a function.
 
-  $: childrenPos = defaults.childrenPos
-  $: children = defaults.children
+  //$: childrenPos = defaults.childrenPos
+  //$: children = defaults.children
 
-  //$: defaultsChanged(defaults)
+  $: defaultsChanged(defaults)
 
-  //function defaultsChanged(defaults){
-  //  childrenPos = defaults.childrenPos
-  //  children = defaults.children
-  //}
+  function defaultsChanged(defaults){
+    childrenPos = defaults.childrenPos
+    children = defaults.children
+  }
 
   let data
   $: data = {
@@ -48,12 +48,6 @@
     childrenPos,
     children,
   }
-
-  $: (() => {console.log('Ensemble initdata =', initdata); debugger;})()
-  $: (() => {console.log('Ensemble defaults =', defaults); debugger;})()
-  $: (() => {console.log('Ensemble data =', data); debugger;})()
-  $: console.log('Ensemble children =', children)
-  $: console.log('Ensemble data =', data)
 
   let pieces = []
   let pieces_drawings = []

@@ -31,11 +31,13 @@ data flow:
   export let children = data.children || []
   export let path = `${getContext('Component-path')}-${data.id}`
 
+  /*
   $: console.log(`Component ${data.type}(${path}) data =`, data)
   $: console.log(`Component ${data.type}(${path}) state =`, state)
   $: console.log(`Component ${data.type}(${path}) childrenState =`, childrenState)
   $: console.log(`Component ${data.type}(${path}) children =`, children)
   $: console.log(`Component ${data.type}(${path}) path =`, path)
+  */
 
   setContext('Component-path', path)
 
@@ -43,7 +45,12 @@ data flow:
   //$: dispatch('datachange', {data})
   //$: dispatch('datachange', {state})
   //$: console.log(`${data.type}(${path}) datachange!`), dispatch('datachange', {state, data})
-  $: console.log(`${data.type}(${path}) datachange!`), dispatch('datachange', {state, data})
+  $: dispatchDatachange(state, data)
+
+  function dispatchDatachange(state, data){
+    //console.log(`${data.type}(${path}) datachange!`)
+    dispatch('datachange', {state, data})
+  }
 
   function renameChild(i){
     let name = prompt(`Renommer "${children[i].name}" en :`, children[i].name) || children[i].name
@@ -59,7 +66,7 @@ data flow:
   }
 
   function onDataChange(e, i){
-    console.log(`${data.type}(${path}).children[${i}] datachange{${Object.keys(e.detail).join()}} = %o`, e.detail);
+    //console.log(`${data.type}(${path}).children[${i}] datachange{${Object.keys(e.detail).join()}} = %o`, e.detail);
     if(e.detail.data)  children[i] = e.detail.data
     if(e.detail.state) childrenState[i] = e.detail.state
   }
@@ -96,7 +103,7 @@ data flow:
   .debug{
     display: none;
   }
-  .component {
+  .component.target, .component:target {
     height: 100%;
     display: flex;
     flex-flow: column nowrap;

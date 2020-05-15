@@ -12,6 +12,7 @@
   export let defaultChildrenPos = []
   export let drawings = false
 
+  /*
   $: console.log('ChildrenPositions children = ', children)
   $: console.log('ChildrenPositions childrenState = ', childrenState)
   $: console.log('ChildrenPositions pieces = ', pieces)
@@ -19,6 +20,7 @@
   $: console.log('ChildrenPositions childrenPos = ', childrenPos)
   $: console.log('ChildrenPositions defaultChildrenPos = ', defaultChildrenPos)
   $: console.log('ChildrenPositions drawings = ', drawings)
+  */
 
   $: childrenPos = children
     .map((_,i) => cleanObject(childrenPos[i] || {}))
@@ -65,8 +67,6 @@
     <th style="text-align: right">du mur</th>
     <td></td>
   </tr>
-<pre>data = {JSON.stringify(childrenPos, null, 2)}</pre>
-<pre>data = {JSON.stringify(defaultChildrenPos, null, 2)}</pre>
 {#each children as child, i}
   {#if child.type}
   <tr>

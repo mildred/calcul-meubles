@@ -21,8 +21,8 @@
 
   $: data = {...initdata}
 
-  $: console.log('App initdata =', initdata)
-  $: console.log('App data =', data)
+  //$: console.log('App initdata =', initdata)
+  //$: console.log('App data =', data)
 
   let agencement = 'horizontal'
 
@@ -30,7 +30,7 @@
   setContext('settings', settings)
   settings.subscribe(settings => {
     if(settings.agencement && agencement != settings.agencement) agencement = settings.agencement
-    console.log("App data.settings =")
+    //console.log("App data.settings =")
     data.settings = settings
     localStorage.setItem('calcul-meubles-settings', JSON.stringify(settings))
   })
@@ -164,7 +164,7 @@
   })
 
   function onDataChange(e) {
-    console.log(`App datachange{${Object.keys(e.detail).join()}} = %o`, e.detail);
+    //console.log(`App datachange{${Object.keys(e.detail).join()}} = %o`, e.detail);
     data = e.detail.data
   }
 </script>
