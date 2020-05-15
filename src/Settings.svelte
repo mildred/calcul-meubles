@@ -4,7 +4,7 @@
   import { cleanObject, reduceToObject } from './utils.js';
   import { routeDeclare } from './route.js';
   import InputNumber from './controls/InputNumber.svelte';
-  import InputDuration from './controls/InputDuration.svelte';
+  import InputDurationMin from './controls/InputDurationMin.svelte';
   import InputCheckbox from './controls/InputCheckbox.svelte';
 
   export let settings;
@@ -15,9 +15,7 @@
   let def = {
     cubeprice: 1440,
     cubemargin: 135,
-    estimations: componentNames
-      .map(c => [c, {}])
-      .reduce(reduceToObject(), {}),
+    postes_estimations: [],
   }
 
   let ui = {}
@@ -26,7 +24,7 @@
   })
 
   $: ui = {
-    estimations: {},
+    postes_estimations: [],
     ...ui
   }
 
@@ -34,19 +32,8 @@
   $: merged = {
     ...def,
     ...cleanObject(ui),
-
-    estimations: componentNames
-      .map(c => [c, mergeEstimations(def.estimations[c] || {}, ui.estimations[c] || {} )])
-      .reduce(reduceToObject(), {}),
   }
   $: settings.set(merged)
-
-  function mergeEstimations(def, ui){
-    return cleanObject({
-      ...def,
-      ...ui,
-    })
-  }
 
   let root_element;
   routeDeclare((route) => {
@@ -54,28 +41,60 @@
     return route.settings ? [root_element] : []
   })
 
-  function addEstim(compName){
+  function addEstim(){
     let estimName = prompt("Quel nom donner à l'estimation :")
-    if(estimName) ui.estimations[compName][estimName] = {
+    if(estimName) ui.postes_estimations = [...ui.postes_estimations, {
+      name: estimName,
       value: 0,
       indice: 'constant',
-    }
+      components: componentNames.reduce((h,c) => (h[c]=true, h), {}),
+    }]
+    console.log(ui.postes_estimations)
   }
 
-  function removeEstim(compName, estimName){
-    ui.estimations[compName][estimName] = null
-    merged.estimations[compName][estimName] = null
+  function removeEstim(idx){
+    ui.postes_estimations.splice(idx, 1)
+    ui.postes_estimations = ui.postes_estimations
   }
 
-  function renameEstim(compName, estimName){
-    let newName = prompt(`Renommer la phase "${estimName}" pour ${compName} en :`, estimName)
+  function renameEstim(idx){
+    let poste = ui.postes_estimations[idx]
+    let newName = prompt(`Renommer la phase "${poste.name}" en :`, poste.name)
     if(!newName) return;
-    ui.estimations[compName][newName] = ui.estimations[compName][estimName]
-    merged.estimations[compName][newName] = merged.estimations[compName][estimName]
-    ui.estimations[compName][estimName] = null
-    merged.estimations[compName][estimName] = null
+    ui.postes_estimations[idx].name = newName
+  }
+
+  function availableComp(ui, idx) {
+    return componentNames.filter(c => ui.postes_estimations[idx].components[c])
+  }
+
+  function open(){
+    let input = document.createElement('input');
+    input.style.display = 'none';
+    input.setAttribute('type', 'file')
+    input.addEventListener('change', (e) => {
+      let file = e.target.files[0];
+      if (!file) return
+
+      let reader = new FileReader();
+      reader.onload = (e) => {
+        let data = JSON.parse(e.target.result)
+        if(data.settings) settings.set(data.settings)
+      }
+      reader.readAsText(file);
+    }, false)
+
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
   }
 </script>
+
+<style>
+  .estim label {
+    display: inline
+  }
+</style>
 
 <div class="routable" bind:this={root_element}>
   <button on:click={(e) => window.location.hash = '#/'}>Fermer</button>
@@ -84,40 +103,76 @@
   <label><span>Prix du bois : </span><InputNumber bind:value={ui.cubeprice} def={def.cubeprice} min=0/> €</label>
   <label><span>Marge de cubage : </span><InputNumber bind:value={ui.cubemargin} def={def.cubemargin} min=0/> %</label>
 
-  <h2>Estimations</h2>
-  {#each componentNames as component}
-    <h3>{component}</h3>
-    <ul>
-      {#each Object.entries(merged.estimations[component])
-          .map(ent => [ent[0], ent[1], def.estimations[component][ent[0]] || {value: 0, indice: ''}])
-          as [estim_name, estim, def_estim]}
-        <li>
-          <label>
-            <span>{estim_name} : </span>
-            <InputDuration bind:value={ui.estimations[component][estim_name].value} def={def_estim.value} />
-            <select bind:value={ui.estimations[component][estim_name].indice}>
-              <option value="">(désactivé)</option>
+  <h2>Postes</h2>
+  <table class="estim">
+    <tr>
+      <th>Nom</th>
+      <th>Temps (min)</th>
+      <th>Indice</th>
+      <th>&nbsp;</th>
+      {#each componentNames as comp}
+        <th>{comp}</th>
+      {/each}
+    </tr>
+    {#each merged.postes_estimations as estim, idx}
+      <tr>
+        <td>{estim.name} :</td>
+        <td><InputDurationMin bind:value={ui.postes_estimations[idx].value} /></td>
+        <td>
+          <select bind:value={ui.postes_estimations[idx].indice}>
+            <option value="">(désactivé)</option>
+            <optgroup label="par opération...">
               <option value="constant">une fois pour toutes</option>
-              <option value="per_component">par {component}</option>
+              <option value="per_component">par élément ({availableComp(ui, idx).join(', ')})</option>
+              <option value="per_ferrage_charniere">par ferrage de charnières</option>
+              <option value="tenon">par tenon</option>
+            </optgroup>
+            <optgroup label="par type de pièce...">
+              <option value="m2_trav_mont_cp">par m² de montants ou traverses à contre-profil</option>
+              <option value="m2_trav_mont_ncp">par m² de montants ou traverses (sauf contre-profil)</option>
+              <option value="m2_trav_mont">par m² de montants ou traverses (tous)</option>
+              <option value="m2_panneau">par m² de panneaux montés en rainure</option>
+              <option value="m2_panneau_seul">par m² de panneaux libres</option>
+              <option value="m2_panneau_tous">par m² de panneaux (tous)</option>
+              <option value="m2_cote">par m² de côtés de tiroir</option>
+              <option value="m2_plateau">par m² (toutes pièces)</option>
+              <option value="nb_trav_mont_cp">par nombre de montants ou traverses à contre-profil</option>
+              <option value="nb_trav_mont_ncp">par nombre de montants ou traverses (sauf contre-profil)</option>
+              <option value="nb_trav_mont">par nombre de montants ou traverses (tous)</option>
+              <option value="nb_panneau">par nombre de panneaux montés en rainure</option>
+              <option value="nb_panneau_seul">par nombre de panneaux libres</option>
+              <option value="nb_panneau_tous">par nombre de panneaux (tous)</option>
+              <option value="nb_cote">par nombre de côtés de tiroir</option>
+              <option value="nb_plateau">par nombre total de pièces</option>
+            </optgroup>
+            <optgroup label="par épaisseur...">
               <option value="m2_ep0_20">par m² de panneau (ep ⩽ 20)</option>
               <option value="m2_ep20_plus">par m² de pièces (ep &gt; 20)</option>
-              <option value="m2_plateau">par m² (toutes pièces)</option>
               <option value="nb_ep0_20">par panneau (ep ⩽ 20)</option>
               <option value="nb_ep20_plus">par nombre de pièces (ep &gt; 20)</option>
-              <option value="nb_plateau">par nombre de pièces et panneaux (toutes epaisseurs)</option>
-              <option value="tenon">par tenon</option>
-            </select>
-            <button on:click={e => removeEstim(component, estim_name)}>🗑</button>
-            <button on:click={e => renameEstim(component, estim_name)}>✎</button>
-          </label>
-        </li>
-      {/each}
-      <li><button on:click={e => addEstim(component)}>Ajouter un poste</button></li>
-    </ul>
-  {/each}
+            </optgroup>
+          </select>
+        </td>
+        <td>
+          <button on:click={e => removeEstim(idx)}>🗑</button>
+          <button on:click={e => renameEstim(idx)}>✎</button>
+        </td>
+        {#each componentNames as comp}
+          <td>
+            <label>
+              <InputCheckbox bind:checked={ui.postes_estimations[idx].components[comp]} title={comp}/>
+              {comp.substr(0,2)}
+            </label>
+          </td>
+        {/each}
+      </tr>
+    {/each}
+    <li><button on:click={e => addEstim()}>Ajouter un poste</button></li>
+  </table>
 
   <hr/>
   <button on:click={(e) => window.location.hash = '#/'}>Fermer</button>
+  <button on:click={open}>Ouvrir...</button>
   <details>
     <summary>Contenu des préférences</summary>
     <pre>{JSON.stringify(merged, null, 2)}</pre>

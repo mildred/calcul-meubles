@@ -37,7 +37,7 @@
     .add_name("Façade")
     .build(opt.largeur, opt.hauteur, opt.epaisseur)
     .put(0, 0, 0, 'xyz')
-    .add_features('plateau')
+    .add_features('panneau-seul')
 
   $: pieces = [facade]
 

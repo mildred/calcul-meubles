@@ -503,7 +503,7 @@
                 case 'Porte':
                   defaults = {
                     force_ferrage: true,
-                    ferrage: 'aucun',
+                    ferrage: cas.tiroir ? 'aucun' : 'charnieres',
                     force_largeur: true,
                     force_hauteur: true,
                     encastree: (cas.porte.type == 'encastre'),
@@ -1130,7 +1130,7 @@
           <legend>Porte colonne n°{selection_casier_i+1}</legend>
           <label>
             <span>Type :&nbsp;</span>
-            <InputSelect def={opt.colonnes[selection_casier_i].porte.type} bind:value={ui_colonnes[selection_casier_i].porte.type}>
+            <InputSelect init={opt.colonnes[selection_casier_i].porte.type} bind:value={ui_colonnes[selection_casier_i].porte.type}>
               <option value="">Aucune</option>
               <option value="total">Recouvrement total</option>
               <option value="demi">Recouvrement à moitié</option>
@@ -1149,7 +1149,7 @@
           <label>
             <span>Type :&nbsp;</span>
             <InputSelect
-              def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].porte.type}
+              init={opt.colonnes[selection_casier_i].casiers[selection_casier_j].porte.type}
               bind:value={ui_colonnes[selection_casier_i].casiers[selection_casier_j].porte.type}>
               <option value="">Aucune</option>
               <option value="total">Recouvrement total</option>

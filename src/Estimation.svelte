@@ -27,8 +27,8 @@
     </tr>
     {#each estim_comp.postes as estim}
       <tr>
-        <th></th>
-        <th>{estim.name}</th>
+        <td></td>
+        <td>{estim.name}</td>
         <td>{estim.base_value.toFixed(4)} {estim.base_unit}</td>
         <td>{temps(estim.value)} / {estim.base_unit}</td>
         <td>{temps(estim.computed)}</td>

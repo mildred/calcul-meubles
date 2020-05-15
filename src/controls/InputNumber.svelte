@@ -12,7 +12,7 @@
     placeholder: def,
     min: force ? def : min,
     max: force ? def : max,
-    step: step,
+    step: step || 'any',
   }
 
   //let uiValue = value
