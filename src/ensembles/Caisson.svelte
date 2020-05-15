@@ -580,8 +580,12 @@
       const child_idx = children.findIndex(c => c.source.join('-') == `Porte-colonne-${i}`)
       if (!colonne.porte.type) {
         // Pas de porte
-        if (child_idx != -1 && confirm(`Supprimer la porte ${children[child_idx].name} ?`)) {
-          children.splice(child_idx, 1)
+        if (child_idx != -1) {
+          if (confirm(`Caisson ${data.name}\nSupprimer la porte ${children[child_idx].name} ?`)) {
+            children.splice(child_idx, 1)
+          } else {
+            children[child_idx].source.push('disabled')
+          }
         }
         return children
       }
