@@ -1,7 +1,6 @@
 <script>
   import SVGDrawing from '../pieces/SVGDrawing.svelte';
   import Group from '../pieces/Group.js';
-  import { nextId } from '../utils.js';
   import Component from '../Component.svelte';
   import ChildrenPositions from '../ChildrenPositions.svelte';
   import ListeDebit from '../ListeDebit.svelte'
@@ -37,23 +36,13 @@
 
   //$: console.log(pieces_drawings)
 
-  function add(type){
-    let id = nextId(children)
-    let name = prompt("Nom du sous-ensemble :", `${path}-${id}`) || `${path}-${id}`
-    children = [...children, {
-      type: type,
-      name: name,
-      id:   id
-    }]
-  }
-
   function rename(){
     data.name = prompt(`Renommer "${data.name}" en :`, data.name) || data.name
   }
 
 </script>
 
-<Component bind:data={data} state={state} bind:childrenState={childrenState} path={path} on:datachange>
+<Component bind:data={data} state={state} bind:children={children} bind:childrenState={childrenState} path={path} on:datachange>
   <div slot="plan">
     <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
     {#each pieces_drawings as pieces_d, i}
@@ -71,13 +60,6 @@
       bind:pieces={pieces}
       bind:pieces_drawings={pieces_drawings}
       drawings={true} />
-
-    <button on:click={e => add('Porte')}>Nouvelle porte</button>
-    <button on:click={e => add('Caisson')}>Nouveau caisson</button>
-    <button on:click={e => add('Etagere')}>Nouvelle étagère</button>
-    <button on:click={e => add('Facade')}>Nouvelle façade</button>
-    <button on:click={e => add('Tiroir')}>Nouveau tiroir</button>
-    <button on:click={e => add('Ensemble')}>Nouveau sous-ensemble</button>
   </div>
 
   <div slot="tables">

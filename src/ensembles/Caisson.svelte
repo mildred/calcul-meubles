@@ -151,19 +151,25 @@
   // Update children then data from opt
   //
 
+  let childrenPos = {}
   let children = data.children
-  $: children = pipeline(
-    children,
-    children => calculPortesTiroirs(opt, children))
+  $: children = calculPortesTiroirs(opt, children)
 
-  let childrenPos = data.childrenPos
+  /*
+  $: console.log('Caisson.initdata = ', initdata)
+  $: console.log('Caisson.opt = ', opt)
+  $: console.log('Caisson.ui = ', ui)
+  $: console.log('Caisson.children = ', children)
+  $: console.log('Caisson.childrenPos = ', childrenPos)
+  $: console.log('Caisson.state = ', state)
+  */
 
   $: data = {
-    ...data,
-    opt: opt,
-    ui: ui,
-    children: children,
-    childrenPos: childrenPos,
+    ...initdata,
+    opt,
+    ui,
+    children,
+    childrenPos,
   }
 
   //
@@ -530,7 +536,7 @@
               defaults = {
                 force_largeur: true,
                 force_hauteur: true,
-                encastree: (cas.porte.type == 'encastre'),
+                encastree: (col.porte.type == 'encastre'),
                 largeur:
                   (col.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
                   (col.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
@@ -584,7 +590,7 @@
       children = [...children, {
         source: ['Porte', 'colonne', i],
         name:   prompt("Quel nom donner à la porte ?", `colonne n°${i+1}`),
-        type:   colonne.porte.type,
+        type:   'Porte',
         id:     nextId(children),
       }]
 
@@ -624,7 +630,7 @@
       children = [...children, {
         source: [type, 'col', i, 'cas', j],
         name:   prompt(`Quel nom donner à la ${type.toLowerCase()} ?`, `colonne n°${i+1}, casier n°${j+1}`),
-        type:   colonne.porte.type,
+        type:   type,
         id:     nextId(children),
       }]
 
@@ -992,7 +998,7 @@
   }
 </style>
 
-<Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} on:datachange>
+<Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} bind:children={children} on:datachange>
   <div slot="plan">
     <SVGDrawing pieces={all_pieces} name={`Caisson ${data.name}`} />
   </div>

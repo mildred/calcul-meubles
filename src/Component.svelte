@@ -1,6 +1,22 @@
 <script>
+/*
+data flow:
+
+- root component pass data to child initdata
+- in child:  data = {...initdata, opt, ui, children}
+- child comp pass data to Component
+- when child data changes, Component fires datachange to root
+- child Component pass data.children[i] to grandchild initdata
+- when data changes in grandchild comp, child Component set it to children
+- children is passed from Component to child element
+- child element recomputes data
+- child Component pass updated data to parent
+
+*/
+
   import { getContext, setContext, createEventDispatcher } from 'svelte';
   import { routeDeclare } from './route.js';
+  import { nextId } from './utils.js';
 
   const dispatch = createEventDispatcher();
   let components = getContext('App-components')
@@ -12,30 +28,33 @@
   export let data
   export let state = {}
   export let childrenState = []
+  export let children = data.children || []
   export let path = `${getContext('Component-path')}-${data.id}`
 
   setContext('Component-path', path)
 
   dispatch('datachange', {data, state})
-  $: dispatch('datachange', {data, state})
+  //$: dispatch('datachange', {data})
+  //$: dispatch('datachange', {state})
+  $: dispatch('datachange', {state, data})
 
   function renameChild(i){
-    let name = prompt(`Renommer "${data.children[i].name}" en :`, data.children[i].name) || data.children[i].name
-    data.children[i].name = name
+    let name = prompt(`Renommer "${children[i].name}" en :`, children[i].name) || children[i].name
+    children[i].name = name
   }
 
   function deleteChild(i){
-    if(!confirm(`Supprimer ${data.children[i].name} ?`)) return
-    let children = [...data.children]
-    children.splice(i, 1)
-    console.log("delete", i, data.children, children)
-    data.children = children
+    if(!confirm(`Supprimer ${children[i].name} ?`)) return
+    let children2 = [...children]
+    children2.splice(i, 1)
+    console.log("delete", i, children, children2)
+    children = children2
   }
 
   function onDataChange(e, i){
-    console.log(`${data.type}(${path}).datachange[${i}] = %o`, e.detail);
-    data.children[i] = e.detail.data
-    childrenState[i] = e.detail.state
+    console.log(`${data.type}(${path}).children[${i}] datachange{${Object.keys(e.detail).join()}} = %o`, e.detail);
+    if(e.detail.data)  children[i] = e.detail.data
+    if(e.detail.state) childrenState[i] = e.detail.state
   }
 
   // manually set target class because when svelte modified an element class
@@ -52,6 +71,16 @@
       ...settings,
       component_layout: layout,
     }))
+  }
+
+  function addChild(type){
+    let id = nextId(children)
+    let name = prompt("Nom du sous-ensemble :", `${path}-${id}`) || `${path}-${id}`
+    children = [...children, {
+      type: type,
+      name: name,
+      id:   id
+    }]
   }
 
 </script>
@@ -168,6 +197,13 @@
     <div class="component-grid-children">
       <slot name="children"></slot>
 
+      <button on:click={e => addChild('Porte')}>Nouvelle porte</button>
+      <button on:click={e => addChild('Caisson')}>Nouveau caisson</button>
+      <button on:click={e => addChild('Etagere')}>Nouvelle étagère</button>
+      <button on:click={e => addChild('Facade')}>Nouvelle façade</button>
+      <button on:click={e => addChild('Tiroir')}>Nouveau tiroir</button>
+      <button on:click={e => addChild('Ensemble')}>Nouveau sous-ensemble</button>
+
       {#if data.children && data.children.length}
       <ul>
       {#each data.children as child, i}
@@ -183,10 +219,12 @@
       {/if}
     </div>
   </div>
+  <!--
   <details>
     <summary>data</summary>
     <pre>{JSON.stringify(data, null, 2)}</pre>
   </details>
+  -->
 </div>
 
 

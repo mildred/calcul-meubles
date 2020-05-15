@@ -196,7 +196,9 @@
 
   <div class="main" slot="dim">
     <form>
+    <!-- buggy
     <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
+    -->
     <label>
       <span>Type : </span>
       <select bind:value={ui.type}>
