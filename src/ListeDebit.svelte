@@ -10,6 +10,7 @@
 
   let separer = true
   let totaux = true
+  let par_epaiss = false
 
   // Pièces, tableau non fusionné
   $: pieces2 = pieces.pieces
@@ -84,23 +85,27 @@
 </style>
 
 <table class="large styled">
-  <caption>Statistiques pour {pieces.name} (<label style="display: inline"><input bind:checked={totaux} type=checkbox /> afficher totaux</label>)</caption>
+  <caption>Statistiques pour {pieces.name} (afficher <label style="display: inline"><input bind:checked={totaux} type=checkbox /> totaux</label>, <label style="display: inline"><input bind:checked={par_epaiss} type=checkbox /> par épaisseur</label>)</caption>
   <tr>
-    <th rowspan=2>Ensemble</th>
-    <th rowspan=2>Dimensions</th>
-    <th rowspan=2>Nombre de pièces</th>
-    <th rowspan=2>Nombre de tenons</th>
-    <th rowspan=2>Surface des pièces</th>
-    {#each statistics_epaisseurs as ep}
-      <th colspan=2>Pièces ép={ep}</th>
-    {/each}
+    <th rowspan={par_epaiss ? 2 : 1}>Ensemble</th>
+    <th rowspan={par_epaiss ? 2 : 1}>Dimensions</th>
+    <th rowspan={par_epaiss ? 2 : 1}>Nombre de pièces</th>
+    <th rowspan={par_epaiss ? 2 : 1}>Nombre de tenons</th>
+    <th rowspan={par_epaiss ? 2 : 1}>Surface des pièces</th>
+    {#if par_epaiss}
+      {#each statistics_epaisseurs as ep}
+        <th colspan=2>Pièces ép={ep}</th>
+      {/each}
+    {/if}
   </tr>
+  {#if par_epaiss}
   <tr>
     {#each statistics_epaisseurs as ep}
       <th>Nbre</th>
       <th>m²</th>
     {/each}
   </tr>
+  {/if}
   {#each statistics as stat}
     <tr>
       <td>{stat.name}</td>
@@ -108,10 +113,12 @@
       <td>{stat.nb_pieces}</td>
       <td>{stat.nb_tenons}</td>
       <td>{stat.surface.toFixed(6)}</td>
+      {#if par_epaiss}
       {#each statistics_epaisseurs as ep}
         <td>{(stat.epaisseurs.find(e => e.epaisseur == ep)||{}).nb_pieces || 0}</td>
         <td>{((stat.epaisseurs.find(e => e.epaisseur == ep)||{}).surface || 0).toFixed(6)}</td>
       {/each}
+      {/if}
     </tr>
   {/each}
 </table>
