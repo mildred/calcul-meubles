@@ -154,6 +154,24 @@ data flow:
   :global(.layout-children) .component-grid > :not(.component-grid-plan):not(.component-grid-children) {
     display: none;
   }
+  :global(.layout-children) .component-grid > .component-grid-plan {
+    order: 1;
+    flex: 0 0 auto;
+    display: unset;
+    border-right: solid 1px var(--border-color);
+    overflow: auto;
+    resize: horizontal;
+  }
+  :global(.layout-children) .component-grid > .component-grid-children {
+    order: 2;
+    flex: 1 1 auto;
+    display: unset;
+    overflow: auto;
+  }
+  :global(.layout-children) .component-grid {
+    display: flex;
+    flex-flow: row nowrap;
+  }
 
   :global(.layout-plan-dim) .component-grid > * {
     display: none;

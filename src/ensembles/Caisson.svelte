@@ -287,9 +287,11 @@
         panneau_dessous: true,
         panneau_dos: true,
         tiroir: false,
+        num_etageres: 0,
         ...colonne.casiers[j],
         ...cleanObject(ui_casier),
         porte: {
+          double: false,
           facade: false,
           type: "",
           ...(colonne.casiers[j] || {}).porte,
@@ -444,138 +446,24 @@
         const casier = colonne.casiers[j]
         children = creePorteCasier(colonne, i, casier, j, children)
         children = creeTiroirCasier(colonne, i, casier, j, children)
+        children = supprimeEtageres(colonne, i, casier, j, children)
+        children = creeEtageres(colonne, i, casier, j, children)
       }
     }
 
     // Update values
     for(let i = 0; i < children.length; i++){
-      const source = children[i].source
-      let type = source[0]
-
-      let defaults
-      let defaultPosition
-      let epaisseur_porte
-
-      switch(type) {
-        default: break
-        case 'Porte':
-        case 'Facade':
-          epaisseur_porte = (children[i].opt || {}).epaisseur || (children[i].opt || {}).epaisseur_montants
-          break
-        case 'Tiroir':
-          break
-      }
-
-      switch(source[1]){
-        default: break
-
-        case 'col':
-        case 'colonne':
-          const i = source[2]
-          const col = opt.colonnes[source[2]]
-
-          switch(source[3]){
-            case 'cas':
-            case 'casier':
-              const j = source[4]
-              const cas = col.casiers[source[4]]
-
-              switch(type) {
-                case 'Tiroir':
-                  let facade = children.find(c => c.source.join('-') == `${typePorte(cas)}-col-${i}-cas-${j}`) || {}
-                  epaisseur_porte = facade ? ((facade.opt || {}).epaisseur || (facade.opt || {}).epaisseur_montants) : 0
-                  defaults = {
-                    force_largeur: true,
-                    force_hauteur: true,
-                    largeur: col.largeur,
-                    hauteur: Math.min(150, cas.hauteur),
-                    profondeur: opt.profondeur -
-                      ((cas.porte.type == 'encastre') ? epaisseur_porte : 0),
-                  }
-                  defaultPosition = {
-                    x: cas.xpos,
-                    y: cas.ypos,
-                    z: (cas.porte.type == 'encastre') ? epaisseur_porte : 0,
-                  }
-                  break
-
-                case 'Facade':
-                case 'Porte':
-                  const double = (source[5] == 'g' || source[5] == 'd')
-                  defaults = {
-                    force_ferrage: true,
-                    ferrage: cas.tiroir ? 'aucun' : 'charnieres',
-                    force_largeur: true,
-                    force_hauteur: true,
-                    encastree: (cas.porte.type == 'encastre'),
-                    largeur: (1 / (double ? 2 : 1)) * (
-                      (cas.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
-                      (cas.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
-                      (cas.porte.type == 'encastre') ? col.largeur
-                                                     : 0),
-                    hauteur:
-                      (cas.porte.type == 'total')    ? cas.hauteur + 2 * opt.epaisseur_montants :
-                      (cas.porte.type == 'demi')     ? cas.hauteur + opt.epaisseur_montants :
-                      (cas.porte.type == 'encastre') ? cas.hauteur
-                                                     : 0,
-                  }
-                  defaultPosition = {
-                    x: cas.xpos
-                       + (source[5] == 'd' ? defaults.largeur : 0)
-                       - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
-                          (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
-                                                      : 0),
-                    y: cas.ypos
-                       - ((cas.porte.type == 'total') ? opt.epaisseur_montants :
-                          (cas.porte.type == 'demi')  ? opt.epaisseur_montants / 2
-                                                      : 0),
-                    z: opt.profondeur
-                       - ((cas.porte.type == 'encastre') ? epaisseur_porte : 0),
-                  }
-                  break
-              }
-              break
-
-            default:
-              defaults = {
-                force_largeur: true,
-                force_hauteur: true,
-                encastree: (col.porte.type == 'encastre'),
-                largeur:
-                  (col.porte.type == 'total')    ? col.largeur + 2 * opt.epaisseur_montants :
-                  (col.porte.type == 'demi')     ? col.largeur + opt.epaisseur_montants :
-                  (col.porte.type == 'encastre') ? col.largeur
-                                                 : 0,
-                hauteur:
-                  (col.porte.type == 'total')    ? opt.hauteur :
-                  (col.porte.type == 'demi')     ? opt.hauteur - opt.epaisseur_montants :
-                  (col.porte.type == 'encastre') ? opt.hauteur - 2 * opt.epaisseur_montants
-                                                 : 0,
-              }
-              defaultPosition = {
-                x: col.ypos
-                   - ((col.porte.type == 'total') ? opt.epaisseur_montants :
-                      (col.porte.type == 'demi')  ? opt.epaisseur_montants / 2
-                                                  : 0),
-                y: opt.epaisseur_montants
-                   - ((col.porte.type == 'total') ? opt.epaisseur_montants :
-                      (col.porte.type == 'demi')  ? opt.epaisseur_montants / 2
-                                                  : 0),
-                z: opt.profondeur
-                   - ((col.porte.type == 'encastre') ? epaisseur_porte : 0),
-              }
-              break
-          }
-          break
-      }
-
-      children[i] = {
+      let child = {
         name: `n°${i+1}`,
         ...children[i],
-        type: type,
-        defaults: defaults,
-        defaultPosition: defaultPosition,
       }
+
+      child = configurePorteColonne(child) || child
+      child = configurePorteFacadeCasier(child) || child
+      child = configureTiroir(child, children) || child
+      child = configureEtagere(child) || child
+
+      children[i] = child
     }
 
     return children
@@ -605,8 +493,127 @@
       return children
     }
 
+    function configurePorteColonne(child) {
+      let source = [...child.source]
+      let [i] = source.splice(2, 1)
+      if(source.join('-') != 'Porte-colonne') return child
+
+      const col = opt.colonnes[i];
+      if(!col) return child;
+
+      const total    = (col.porte.type == 'total')
+      const demi     = (col.porte.type == 'demi')
+      const encastre = (col.porte.type == 'encastre')
+
+      const epaisseur_porte = (child.opt || {}).epaisseur || (child.opt || {}).epaisseur_montants
+
+      return {
+        ...child,
+        type: 'Facade',
+        defaults: {
+          force_largeur: true,
+          force_hauteur: true,
+          encastree: encastre,
+          largeur:
+            total    ? col.largeur + 2 * opt.epaisseur_montants :
+            demi     ? col.largeur + opt.epaisseur_montants :
+            encastre ? col.largeur
+                                           : 0,
+          hauteur:
+            total    ? opt.hauteur :
+            demi     ? opt.hauteur - opt.epaisseur_montants :
+            encastre ? opt.hauteur - 2 * opt.epaisseur_montants
+                                           : 0,
+        },
+        defaultPosition: {
+          x: col.ypos
+             - (total ? opt.epaisseur_montants :
+                demi  ? opt.epaisseur_montants / 2
+                                            : 0),
+          y: opt.epaisseur_montants
+             - (total ? opt.epaisseur_montants :
+                demi  ? opt.epaisseur_montants / 2
+                                            : 0),
+          z: opt.profondeur
+             - (encastre ? epaisseur_porte : 0),
+        },
+      }
+    }
+
     function typePorte(casier){
       return casier.porte.facade ? 'Facade' : 'Porte'
+    }
+
+    function supprimeEtageres(colonne, i, casier, j, children){
+      const num_etageres = casier.num_etageres
+
+      for(let idx = children.length-1; idx >= 0; idx--){
+        const child = children[idx]
+        let source = [...child.source] // Etagere-col-i-cas-j-num-n
+        let [num] = source.splice(6,1)
+        if(source.join('-') != `Etagere-col-${i}-cas-${j}-num`) continue
+        if(num < num_etageres) continue
+
+        if (confirm(`Caisson ${data.name}\nSupprimer l'étagère ${child.name} ?`)) {
+          children.splice(i, 1)
+        } else {
+          children[i].source.push('disabled')
+        }
+      }
+      return children
+    }
+
+    function creeEtageres(colonne, i, casier, j, children){
+      const num_etageres = casier.num_etageres
+      let name = null
+
+      for(let num = 0; num < num_etageres; num++){
+        const src = `Etagere-col-${i}-cas-${j}-num-${num}`
+        const child_idx = children.findIndex(c => c.source.join('-') == src)
+        if(child_idx != -1) continue
+
+        if(name == null) {
+          name = `colonne n°${i+1}, casier n°${j+1}`
+          name = prompt(`Quel nom donner aux étagères ?`, name) || name
+        }
+
+        children = [...children, {
+          source: ['Etagere', 'col', i, 'cas', j, 'num', num],
+          name:   `${name} #${num+1}`,
+          type:   'Etagere',
+          id:     nextId(children),
+        }]
+      }
+      return children
+    }
+
+    function configureEtagere(child) {
+      let source = [...child.source]
+      let [num] = source.splice(6, 1)
+      let [j] = source.splice(4, 1)
+      let [i] = source.splice(2, 1)
+      if(source.join('-') != 'Etagere-col-cas-num') return child
+
+      const col = opt.colonnes[i]; if(!col) return child;
+      const cas = col.casiers[j];  if(!cas)  return child;
+
+      const step = cas.hauteur / (cas.num_etageres + 1)
+
+      return {
+        ...child,
+        type: 'Etagere',
+        defaults: {
+          force_largeur:    true,
+          force_profondeur: true,
+          largeur:          col.largeur,
+          profondeur:       opt.profondeur,
+        },
+        defaultPosition: {
+          x: col.xpos,
+          y: cas.ypos + (num+1) * step,
+          z: 0,
+        },
+      }
     }
 
     function creePorteCasier(colonne, i, casier, j, children){
@@ -631,16 +638,17 @@
       ]
 
       // Supprimer la facade si elle n'est pas du bon type
-      for(let i = children.length-1; i >= 0; i--){
-        const source = children[i].source.join('-')
+      for(let idx = children.length-1; idx >= 0; idx--){
+        const source = children[idx].source.join('-')
         //console.log(source, variants, all_variants)
-        console.log(source, children[i].name)
+        console.log(source, children[idx].name)
         if (variants.includes(source) || !all_variants.includes(source)) break
 
-        if (confirm(`Caisson ${data.name}\nSupprimer la ${children[i].type} ${children[i].name} ?`)) {
-          children.splice(i, 1)
+        if (confirm(`Caisson ${data.name}\nSupprimer la ${children[idx].type}
+        ${children[idx].name} ?`)) {
+          children.splice(idx, 1)
         } else {
-          children[i].source.push('disabled')
+          children[idx].source.push('disabled')
         }
       }
 
@@ -685,6 +693,67 @@
       return children;
     }
 
+    function configurePorteFacadeCasier(child) {
+      let source = [...child.source]
+      let [side] = source.splice(5, 1)
+      let [j]    = source.splice(4, 1)
+      let [i]    = source.splice(2, 1)
+      let [type] = source.splice(0, 1)
+      if(source.join('-') != 'col-cas') return child
+      if(type != 'Porte' && type != 'Facade') return child
+      if(side && side != 'g' && side != 'd') return child
+
+      const col = opt.colonnes[i]; if(!col) return child;
+      const cas = col.casiers[j];  if(!cas) return child;
+
+      const double   = !!side
+      const total    = (cas.porte.type == 'total')
+      const demi     = (cas.porte.type == 'demi')
+      const encastre = (cas.porte.type == 'encastre')
+
+      const epaisseur_porte = (child.opt || {}).epaisseur || (child.opt || {}).epaisseur_montants
+
+      const defaults = {
+        force_ferrage: true,
+        ferrage:       cas.tiroir ? 'aucun' : 'charnieres',
+        encastree:     encastre,
+        force_largeur: true,
+        force_hauteur: true,
+
+        largeur: (1 / (double ? 2 : 1)) * (
+          total    ? col.largeur + 2 * opt.epaisseur_montants :
+          demi     ? col.largeur + opt.epaisseur_montants :
+          encastre ? col.largeur
+                                         : 0),
+        hauteur:
+          total    ? cas.hauteur + 2 * opt.epaisseur_montants :
+          demi     ? cas.hauteur + opt.epaisseur_montants :
+          encastre ? cas.hauteur
+                                         : 0,
+      }
+
+      const defaultPosition = {
+          x: cas.xpos
+             + (side == 'd' ? defaults.largeur : 0)
+             - (total ? opt.epaisseur_montants :
+                demi  ? opt.epaisseur_montants / 2
+                                            : 0),
+          y: cas.ypos
+             - (total ? opt.epaisseur_montants :
+                demi  ? opt.epaisseur_montants / 2
+                                            : 0),
+          z: opt.profondeur
+             - (encastre ? epaisseur_porte : 0),
+        }
+
+      return {
+        ...child,
+        type: type,
+        defaults,
+        defaultPosition,
+      }
+    }
+
     function creeTiroirCasier(colonne, i, casier, j, children){
       const child_idx = children.findIndex(c => c.source.join('-') == `Tiroir-col-${i}-cas-${j}`)
 
@@ -710,6 +779,37 @@
       }]
 
       return children
+    }
+
+    function configureTiroir(child, children) {
+      let source = [...child.source]
+      let [j] = source.splice(4, 1)
+      let [i] = source.splice(2, 1)
+      if(source.join('-') != 'Tiroir-col-cas') return child
+
+      const col = opt.colonnes[i]; if(!col) return child;
+      const cas = col.casiers[j];  if(!cas) return child;
+
+      const facade = children.find(c => c.source.join('-') == `${typePorte(cas)}-col-${i}-cas-${j}`) || {}
+      const epaisseur_porte = facade ? ((facade.opt || {}).epaisseur || (facade.opt || {}).epaisseur_montants) : 0
+      const retrait = (cas.porte.type == 'encastre') ? epaisseur_porte : 0
+
+      return {
+        ...child,
+        type: 'Facade',
+        defaults: {
+          force_largeur: true,
+          force_hauteur: true,
+          largeur:       col.largeur,
+          hauteur:       Math.min(150, cas.hauteur),
+          profondeur:    opt.profondeur - retrait,
+        },
+        defaultPosition: {
+          x: cas.xpos,
+          y: cas.ypos,
+          z: (cas.porte.type == 'encastre') ? epaisseur_porte : 0,
+        },
+      }
     }
   }
 
@@ -1191,7 +1291,7 @@
         {#each [selection_casier] as sel (sel.key)}
         <p><strong>Casier n° {selection_casier_j+1}</strong></p>
         <fieldset>
-          <legend>Porte col{selection_casier_i+1} cas{selection_casier_j+1}</legend>
+          <legend>Porte col°{selection_casier_i+1} cas°{selection_casier_j+1}</legend>
           <label>
             <span>Type :&nbsp;</span>
             <InputSelect
@@ -1212,15 +1312,25 @@
               /> façade seulement</label>
           </label>
         </fieldset>
-        <p>
-          <!--
-          <label><InputCheckbox checked={true} /> panneau gauche</label>
-          <label><InputCheckbox checked={true} /> panneau droit</label>
-          -->
+        <fieldset>
+          <legend>Étagère col°{selection_casier_i+1} cas°{selection_casier_j+1}</legend>
+          <label>
+            <span>Nombre d'étagères</span>
+            <InputNumber
+              def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].num_etageres}
+              bind:value={ui_colonnes[selection_casier_i].casiers[selection_casier_j].num_etageres}
+              />
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Tiroir col°{selection_casier_i+1} cas°{selection_casier_j+1}</legend>
           <label><InputCheckbox tristate={false}
             def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
             bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].tiroir}
             /> tiroir</label>
+        </fieldset>
+        <fieldset>
+          <legend>Panneaux col°{selection_casier_i+1} cas°{selection_casier_j+1}</legend>
           {#if selection_casier_j == 0}
           <label><InputCheckbox tristate={false}
             def={opt.panneau_dessus}
@@ -1263,11 +1373,6 @@
                 /> panneau droite (n°{k+1})</label>
             {/if}
           {/each}
-        </p>
-        <fieldset style="display: none">
-          <legend>
-            <label><InputCheckbox tristate={false} /> Porte casier</label>
-          </legend>
         </fieldset>
         {/each}
       </div>
