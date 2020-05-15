@@ -3,6 +3,7 @@
   import { cleanObject, pipeline } from '../utils.js';
   import InputNumber from '../controls/InputNumber.svelte';
   import InputCheckbox from '../controls/InputCheckbox.svelte';
+  import InputSelect from '../controls/InputSelect.svelte';
   import Component from '../Component.svelte';
   import Cote from '../draw/Cote.svelte';
   import Piece from '../pieces/piece.js';
@@ -32,6 +33,7 @@
     jeu_rainure: 1,
     epaisseur_panneau: 15,
     inclure_panneau: true,
+    ferrage: 'charnieres',
     ...initdata.defaults
   }
 
@@ -59,6 +61,7 @@
 
   $: montant = new Piece()
     .add_name("Montant")
+    .add_features(opt.type == 'contre-profil' ? 'montant-cp' : 'montant')
     .build(opt.hauteur - 2*jeu_encastrement, opt.largeur_montants, opt.epaisseur)
   $: montant_g = montant
     .add_name("gauche")
@@ -70,12 +73,14 @@
   $: traverse =
     (opt.type == 'contre-profil')  ? new Piece()
       .add_name("Traverse")
+      .add_features('traverse-cp')
       .build(
         opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_profil) - 2*jeu_encastrement,
         0,
         opt.epaisseur):
     (opt.type == 'tenon-mortaise') ? new Piece()
       .add_name("Traverse")
+      .add_features('traverse')
       .build(
         opt.largeur - 2 * opt.largeur_montants - 2*jeu_encastrement,
         0,
@@ -110,6 +115,7 @@
         opt.epaisseur_panneau):
     new Piece())
     .add_name("Panneau")
+    .add_features('panneau')
     .put(
       jeu_encastrement + montant.largeur - opt.profondeur_rainure + opt.jeu_rainure,
       jeu_encastrement + traverse_b.largeur - opt.profondeur_rainure + opt.jeu_rainure,
@@ -200,11 +206,18 @@
     <label><span>Quantité : </span><InputNumber min=1 bind:value={ui.quantite} def={defaults.quantite}/></label>
     -->
     <label>
+      <span>Ferrage : </span>
+      <InputSelect def={defaults.ferrage} bind:value={ui.ferrage} force={defaults.force_ferrage}>
+        <option value="aucun">aucun</option>
+        <option value="charnieres">charnières</option>
+      </InputSelect>
+    </label>
+    <label>
       <span>Type : </span>
-      <select bind:value={ui.type}>
+      <InputSelect def={defaults.type} bind:value={ui.type}>
         <option value="tenon-mortaise">tenon et mortaise</option>
         <option value="contre-profil">contre profil</option>
-      </select>
+      </InputSelect>
     </label>
     <label><span>Largeur   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
     <label><span>Hauteur   : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>

@@ -31,12 +31,19 @@ data flow:
   export let children = data.children || []
   export let path = `${getContext('Component-path')}-${data.id}`
 
+  $: console.log(`Component ${data.type}(${path}) data =`, data)
+  $: console.log(`Component ${data.type}(${path}) state =`, state)
+  $: console.log(`Component ${data.type}(${path}) childrenState =`, childrenState)
+  $: console.log(`Component ${data.type}(${path}) children =`, children)
+  $: console.log(`Component ${data.type}(${path}) path =`, path)
+
   setContext('Component-path', path)
 
   dispatch('datachange', {data, state})
   //$: dispatch('datachange', {data})
   //$: dispatch('datachange', {state})
-  $: dispatch('datachange', {state, data})
+  //$: console.log(`${data.type}(${path}) datachange!`), dispatch('datachange', {state, data})
+  $: console.log(`${data.type}(${path}) datachange!`), dispatch('datachange', {state, data})
 
   function renameChild(i){
     let name = prompt(`Renommer "${children[i].name}" en :`, children[i].name) || children[i].name
@@ -222,7 +229,7 @@ data flow:
   <!--
   <details>
     <summary>data</summary>
-    <pre>{JSON.stringify(data, null, 2)}</pre>
+    <pre>JSON.stringify(data, null, 2)</pre>
   </details>
   -->
 </div>

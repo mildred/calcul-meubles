@@ -502,6 +502,8 @@
                 case 'Facade':
                 case 'Porte':
                   defaults = {
+                    force_ferrage: true,
+                    ferrage: 'aucun',
                     force_largeur: true,
                     force_hauteur: true,
                     encastree: (cas.porte.type == 'encastre'),
@@ -673,8 +675,19 @@
   // Pièces
   //
 
-  $: montants_template = new Piece()
+  let montant = new Piece()
     .add_name("Montant")
+    .add_features('montant')
+
+  let traverse = new Piece()
+    .add_name("Traverse")
+    .add_features('traverse')
+
+  let piece_panneau = new Piece()
+    .add_name("Panneau")
+    .add_features('panneau')
+
+  $: montants_template = montant
     .build(
       opt.hauteur,
       opt.largeur_montants,
@@ -696,8 +709,7 @@
     .add_name("avant-droit")
     .put(0, 0, opt.profondeur - montants_template.largeur, 'yzx')
 
-  $: traverses_cote = new Piece()
-    .add_name("Traverse", "coté")
+  $: traverses_cote = traverse
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
@@ -721,8 +733,8 @@
     .add_name("bas-droit")
     .put(opt.largeur - traverses_cote.epaisseur, opt.hauteur - traverses_cote.largeur)
 
-  $: traverses = new Piece()
-    .add_name("Traverse", "principale")
+  $: traverses = traverse
+    .add_name("principale")
     .build(
       opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
       opt.largeur_traverses,
@@ -746,8 +758,7 @@
     .add_name("avant-bas")
     .put(null, opt.hauteur - traverses.epaisseur, opt.profondeur - traverses.largeur)
 
-  $: panneaux_haut_bas = new Piece()
-    .add_name("Panneau")
+  $: panneaux_haut_bas = piece_panneau
     .build(
       opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure),
       opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
@@ -768,8 +779,8 @@
 
   $: panneaux_dos = opt.colonnes.map((col, i) => (col.casiers.map((casier, j) =>
     (casier.panneau_dos == false) ? null :
-    (new Piece()
-      .add_name("Panneau", "dos", `colonne n°${i+1}`, `casier n°${j+1}`)
+    (piece_panneau
+      .add_name("dos", `colonne n°${i+1}`, `casier n°${j+1}`)
       .build(
         casier.hauteur + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
         col.largeur + opt.epaisseur_montants - opt.largeur_montants / 2
@@ -780,8 +791,8 @@
         casier.ypos - opt.profondeur_rainure + opt.jeu_rainure,
         0, 'yxz')))))
 
-  $: montants_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (new Piece()
-    .add_name("Montant", `cloison n°${i+1}`)
+  $: montants_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (montant
+    .add_name(`cloison n°${i+1}`)
     .build(
       opt.hauteur - 2 * (opt.epaisseur_montants - opt.montants_inter_longueur_tenon),
       opt.largeur_montants,
@@ -819,8 +830,8 @@
 
   $: panneaux_cote_et_cloisons = opt.montants.map((sub, i) => (
     sub.panneaux.map((panneau, j) => !panneau.actif ? null : (
-      new Piece()
-      .add_name("Panneau",
+      piece_panneau
+      .add_name(
         (i == 0)                   ? "coté gauche" :
         (i >= opt.colonnes.length) ? "coté droit"  : `cloison n°${i}`,
         `caisson n°${j+1}`)
@@ -837,8 +848,8 @@
     ))
   ))
 
-  $: traverses_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (new Piece()
-    .add_name("Traverse", `cloison n°${i+1}`)
+  $: traverses_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (traverse
+    .add_name(`cloison n°${i+1}`)
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
@@ -862,8 +873,8 @@
 
   $: traverses_inter2_av_ar = opt.colonnes.map((col, i) => (
     col.casiers.map((casier, j) => (j == col.casiers.length-1) ? null : (
-      new Piece()
-        .add_name("Traverse", "intermédiaire")
+      traverse
+        .add_name("intermédiaire")
         .build(col.largeur, opt.largeur_traverses, opt.epaisseur_montants)
         .ajout_tenons(opt.profondeur_tenons)
         .put(
@@ -892,8 +903,8 @@
     col.casiers.map((casier, j) =>
       (j == col.casiers.length-1) ? null :
       (casier.panneau_dessous === false) ? null :
-      (new Piece()
-        .add_name("Panneau", "dessous", `colonne n°${i+1}`, `casier n°${j+1}`)
+      (piece_panneau
+        .add_name("dessous", `colonne n°${i+1}`, `casier n°${j+1}`)
         .build(
           col.largeur
             + 2 * (opt.profondeur_rainure - opt.jeu_rainure),

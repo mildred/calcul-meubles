@@ -13,21 +13,47 @@
   export let state = {}
   let childrenState = []
 
-  let data = {}
-  $: data = {
+  let defaults = {}
+  defaults = {
     children: [],
     childrenPos: [],
     type: 'Ensemble',
     id: 0,
-    name: name,
+    name,
     ...initdata
   }
 
-  let childrenPos = data.childrenPos
-  let children = data.children
+  let children = defaults.children
+  let childrenPos = defaults.childrenPos
 
-  $: data.childrenPos = childrenPos
-  $: data.children = children
+  // These two lines are causing an infinite loop (especially the childrenPos
+  // one). When the ChildrenPositions component below modifies the childrenPos
+  // property through its binding, both childrenPos and defaults are
+  // invalidated, although defaults was never modified. The solution is to hide
+  // to svelte the relationship between those two properties in a function.
+
+  $: childrenPos = defaults.childrenPos
+  $: children = defaults.children
+
+  //$: defaultsChanged(defaults)
+
+  //function defaultsChanged(defaults){
+  //  childrenPos = defaults.childrenPos
+  //  children = defaults.children
+  //}
+
+  let data
+  $: data = {
+    ...defaults,
+    childrenPos,
+    children,
+  }
+
+  $: (() => {console.log('Ensemble initdata =', initdata); debugger;})()
+  $: (() => {console.log('Ensemble defaults =', defaults); debugger;})()
+  $: (() => {console.log('Ensemble data =', data); debugger;})()
+  $: console.log('Ensemble children =', children)
+  $: console.log('Ensemble data =', data)
 
   let pieces = []
   let pieces_drawings = []
@@ -65,12 +91,6 @@
   <div slot="tables">
     <ListeDebit pieces={new Group(pieces, `Ensemble ${data.name}`, 'Ensemble')} />
   </div>
-
-  <details>
-    <summary>data</summary>
-    <pre>data = {JSON.stringify(data, null, 2)}</pre>
-    <pre>initdata = {JSON.stringify(initdata, null, 2)}</pre>
-  </details>
 </Component>
 
 

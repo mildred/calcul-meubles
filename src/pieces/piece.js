@@ -1,4 +1,5 @@
 import { get_position, get_orient } from './utils.js';
+import { reduceToObject } from '../utils.js';
 
 export default class Piece {
 
@@ -14,6 +15,7 @@ export default class Piece {
     this.orient     = 'xyz'
     this.names      = []
     this.que        = 1
+    this.features   = []
   }
 
   update(props) {
@@ -65,6 +67,21 @@ export default class Piece {
     })
   }
 
+  // add features to the piece if they do not exist yet
+  // example: group.add_features("traverse", "traverse-tenonee")
+  add_features() {
+    return this.update_new({
+      ...this,
+      features: [...this.features, ...Array.from(arguments, x => x && !this.features.includes(x))],
+    })
+  }
+
+  count_features() {
+    return Array.from(arguments,
+      feat => [feat, this.features.includes(feat) ? this.que : 0])
+      .reduce(reduceToObject(0, 1), {})
+  }
+
   multiply_que(que){
     return this.update_new({
       ...this,
@@ -75,9 +92,9 @@ export default class Piece {
   build(longueur, largeur, epaisseur) {
     return this.update_new({
       ...this,
-      arrasement:      longueur || this.arrasement,
-      longueur:        longueur || this.longueur,
-      largeur:         largeur || this.largeur,
+      arrasement:      longueur  || this.arrasement,
+      longueur:        longueur  || this.longueur,
+      largeur:         largeur   || this.largeur,
       epaisseur:       epaisseur || this.epaisseur,
     })
   }

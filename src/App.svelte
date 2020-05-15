@@ -16,7 +16,13 @@
   setContext('App-components',  components)
 
   let filename = `meuble_${new Date().toISOString().slice(0,16).replace(/T/, '_').replace(/:/, '')}.json`
+  let initdata = {}
   let data = {}
+
+  $: data = {...initdata}
+
+  $: console.log('App initdata =', initdata)
+  $: console.log('App data =', data)
 
   let agencement = 'horizontal'
 
@@ -24,6 +30,7 @@
   setContext('settings', settings)
   settings.subscribe(settings => {
     if(settings.agencement && agencement != settings.agencement) agencement = settings.agencement
+    console.log("App data.settings =")
     data.settings = settings
     localStorage.setItem('calcul-meubles-settings', JSON.stringify(settings))
   })
@@ -35,7 +42,7 @@
   let item = JSON.parse(localStorage.getItem('calcul-meubles-data') || 'null')
   let fileData = localStorage.getItem('calcul-meubles-file-data')
   if(item) {
-    data = item.data
+    initdata = item.data
     filename = item.filename
   }
 
@@ -130,8 +137,8 @@
 
       let reader = new FileReader();
       reader.onload = (e) => {
-        data     = JSON.parse(e.target.result)
-        settings.set(data.settings || {})
+        initdata = JSON.parse(e.target.result)
+        settings.set(initdata.settings || {})
         filename = file.name
         fileData = e.target.result
       }
@@ -155,6 +162,11 @@
   routeDeclare((route) => {
     return route.root ? [root_target] : []
   })
+
+  function onDataChange(e) {
+    console.log(`App datachange{${Object.keys(e.detail).join()}} = %o`, e.detail);
+    data = e.detail.data
+  }
 </script>
 
 <style>
@@ -284,7 +296,7 @@
   </div>
 
   <div class="main">
-    <Ensemble name="Meuble" initdata={data} on:datachange={(e) => {data = e.detail.data}} />
+    <Ensemble name="Meuble" initdata={initdata} on:datachange={onDataChange} />
     <div class="routable" bind:this={root_target}>
       <details>
         <summary>Contenu du fichier</summary>

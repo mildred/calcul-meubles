@@ -10,6 +10,7 @@ export default class Group {
     this.x = 0
     this.y = 0
     this.z = 0
+    this.features = []
   }
 
   individual() {
@@ -123,5 +124,24 @@ export default class Group {
   projection_position(pos){
     pos = get_position(pos)
     return [this.dim(pos[0]), -this.dim(pos[1])]
+  }
+
+  // add features to the piece if they do not exist yet
+  // example: group.add_features("porte-facade")
+  add_features() {
+    return this.update({
+      features: [...this.features, ...Array.from(arguments, x => x && !this.features.includes(x))],
+    })
+  }
+
+  count_features() {
+    return this.pieces
+      .map(piece => piece.count_features(...arguments))
+      .reduce((res,counts) => {
+        for(let feat in counts) {
+          res[feat] = (res[feat] || 0) + counts[feat]
+        }
+        return res;
+      }, this.features)
   }
 }

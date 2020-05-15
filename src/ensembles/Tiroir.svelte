@@ -55,6 +55,7 @@
 
   $: cote = new Piece()
     .add_name("Coté")
+    .add_features('cote')
     .build(
       opt.profondeur_tir - 2 * (opt.epaisseur - opt.profondeur_queues_arrondes),
       opt.hauteur_tir,
@@ -76,6 +77,7 @@
 
   $: face = new Piece()
     .add_name("Face")
+    .add_features('cote')
     .build(opt.largeur_tir, opt.hauteur_tir, opt.epaisseur);
   $: face_av = face
     .add_name("avant")
@@ -94,6 +96,7 @@
 
   $: fond = new Piece()
     .add_name("Fond tiroir")
+    .add_features('panneau')
     .build(
       opt.largeur_tir - 2 * (opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure),
       opt.profondeur_tir - (opt.epaisseur - opt.profondeur_rainure + opt.jeu_rainure),

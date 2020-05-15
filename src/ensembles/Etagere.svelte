@@ -37,6 +37,7 @@
     .add_name("Étagère")
     .build(opt.largeur, opt.profondeur, opt.epaisseur)
     .put(0, 0, 0, 'xzy')
+    .add_features('plateau')
 
   $: pieces = [etagere]
 
