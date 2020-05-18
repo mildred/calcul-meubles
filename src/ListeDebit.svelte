@@ -11,6 +11,7 @@
   let separer = true
   let totaux = true
   let par_epaiss = false
+  let par_type = true
 
   // Pièces, tableau non fusionné
   $: pieces2 = pieces.pieces
@@ -47,6 +48,7 @@
     .reduce((h,x) => {x.epaisseurs.forEach(ep => h[ep.epaisseur] = true); return h}, {}))
 
   function calculStatistics(total_group, totaux){
+    console.log("calculStatistics!!!!", total_group.individual().map(p => p.features))
     return total_group
       .flat_groups('', totaux)
       .map(group => {
@@ -59,6 +61,9 @@
             surface: pieces_par_epaisseur[epaisseur].reduce((s,p) => s + p.surface(), 0)
           }))
         const {xmin, xmax, ymin, ymax, zmin, zmax} = group.bounding_box()
+        const panneaux = group.pieces
+          .filter(p => p.features.includes('panneau') || p.features.includes('panneau-seul'))
+        console.log(group.name, JSON.stringify(group.pieces.map(p => p.features)))
         return {
           name:        group.name,
           dimension_x: xmax - xmin,
@@ -68,6 +73,8 @@
           nb_pieces:   group.pieces.length,
           surface:     group.surface(),
           epaisseurs:  stats_epaisseur,
+          nb_panneaux: panneaux.length,
+          m2_panneaux: panneaux.reduce((s,p) => s + p.surface(), 0),
         }
       })
       .filter(stat => stat.nb_pieces > 0)
@@ -85,25 +92,34 @@
 </style>
 
 <table class="large styled">
-  <caption>Statistiques pour {pieces.name} (afficher <label style="display: inline"><input bind:checked={totaux} type=checkbox /> totaux</label>, <label style="display: inline"><input bind:checked={par_epaiss} type=checkbox /> par épaisseur</label>)</caption>
+  <caption>Statistiques pour {pieces.name} (afficher <label style="display: inline"><input bind:checked={totaux} type=checkbox /> totaux</label>, <label style="display: inline"><input bind:checked={par_epaiss} type=checkbox /> par épaisseur</label>, <label style="display: inline"><input bind:checked={par_type} type=checkbox /> par type</label>)</caption>
   <tr>
-    <th rowspan={par_epaiss ? 2 : 1}>Ensemble</th>
-    <th rowspan={par_epaiss ? 2 : 1}>Dimensions</th>
-    <th rowspan={par_epaiss ? 2 : 1}>Nombre de pièces</th>
-    <th rowspan={par_epaiss ? 2 : 1}>Nombre de tenons</th>
-    <th rowspan={par_epaiss ? 2 : 1}>Surface des pièces</th>
+    <th rowspan={(par_epaiss||par_type) ? 2 : 1}>Ensemble</th>
+    <th rowspan={(par_epaiss||par_type) ? 2 : 1}>Dimensions</th>
+    <th rowspan={(par_epaiss||par_type) ? 2 : 1}>Nombre de pièces</th>
+    <th rowspan={(par_epaiss||par_type) ? 2 : 1}>Nombre de tenons</th>
+    <th rowspan={(par_epaiss||par_type) ? 2 : 1}>Surface des pièces</th>
     {#if par_epaiss}
       {#each statistics_epaisseurs as ep}
         <th colspan=2>Pièces ép={ep}</th>
       {/each}
     {/if}
+    {#if par_type}
+      <th colspan=2>Panneaux</th>
+    {/if}
   </tr>
-  {#if par_epaiss}
+  {#if par_epaiss || par_type}
   <tr>
-    {#each statistics_epaisseurs as ep}
+    {#if par_epaiss}
+      {#each statistics_epaisseurs as ep}
+        <th>Nbre</th>
+        <th>m²</th>
+      {/each}
+    {/if}
+    {#if par_type}
       <th>Nbre</th>
       <th>m²</th>
-    {/each}
+    {/if}
   </tr>
   {/if}
   {#each statistics as stat}
@@ -119,13 +135,13 @@
         <td>{((stat.epaisseurs.find(e => e.epaisseur == ep)||{}).surface || 0).toFixed(6)}</td>
       {/each}
       {/if}
+      {#if par_type}
+        <td>{stat.nb_panneaux}</td>
+        <td>{stat.m2_panneaux.toFixed(6)}</td>
+      {/if}
     </tr>
   {/each}
 </table>
-
-<hr/>
-
-<Estimation pieces={pieces} bind:estimations={estimations} />
 
 <hr/>
 
@@ -173,3 +189,8 @@
     <td>{total_prix.toFixed(2)}</td>
   </tr>
 </table>
+
+<hr/>
+
+<Estimation pieces={pieces} bind:estimations={estimations} />
+

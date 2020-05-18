@@ -19,11 +19,20 @@ export default class Piece {
   }
 
   update(props) {
+    if (props.features && props.features.length == 1 && props.features[0] == true) {
+      console.log("WARNING: incorrect feature %o", props)
+      throw new Exception()
+    }
     return this.update_new({...this, props})
   }
 
   update_new(props) {
-    return Object.assign(Object.create(Piece.prototype), props)
+    let res = Object.assign(Object.create(Piece.prototype), props)
+    if (res.features && res.features.length == 1 && res.features[0] == true) {
+      console.log("WARNING: incorrect feature %o", res)
+      throw new Exception()
+    }
+    return res
   }
 
   get epaisseur_plateau() {
@@ -72,7 +81,7 @@ export default class Piece {
   add_features() {
     return this.update_new({
       ...this,
-      features: [...this.features, ...Array.from(arguments, x => x && !this.features.includes(x))],
+      features: [...this.features, ...Array.from(arguments).filter(x => x && !this.features.includes(x))],
     })
   }
 

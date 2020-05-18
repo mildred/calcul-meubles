@@ -30,63 +30,63 @@ export function calculEstimation(estim, pieceg, constants, type){
       return {
         base_value: pieceg.pieces
           .filter(p => p.epaisseur <= 20)
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_ep20_plus':
       return {
         base_value: pieceg.pieces
           .filter(p => p.epaisseur > 20)
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_panneau':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('panneau'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_panneau_seul':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('panneau-seul'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_panneau_tous':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('panneau') || p.features.includes('panneau-seul'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_trav_mont_ncp':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('traverse') || p.features.includes('montant'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_trav_mont_cp':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('traverse-cp') || p.features.includes('montant-cp'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_trav_mont':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('traverse') || p.features.includes('montant') || p.features.includes('traverse-cp') || p.features.includes('montant-cp'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_cote':
       return {
         base_value: pieceg.pieces
           .filter(p => p.features.includes('cote'))
-          .reduce((s,p) => s + p.surface, 0),
+          .reduce((s,p) => s + p.surface(), 0),
         base_unit: "m²",
       }
     case 'm2_plateau':
