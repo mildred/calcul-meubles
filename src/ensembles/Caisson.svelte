@@ -509,7 +509,7 @@
 
       return {
         ...child,
-        type: 'Facade',
+        type: 'Porte',
         defaults: {
           force_largeur: true,
           force_hauteur: true,
@@ -796,7 +796,7 @@
 
       return {
         ...child,
-        type: 'Facade',
+        type: 'Tiroir',
         defaults: {
           force_largeur: true,
           force_hauteur: true,
