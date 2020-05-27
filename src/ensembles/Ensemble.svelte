@@ -14,7 +14,7 @@
   let childrenState = []
 
   let defaults = {}
-  defaults = {
+  $: defaults = {
     children: [],
     childrenPos: [],
     type: 'Ensemble',

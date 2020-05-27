@@ -252,7 +252,7 @@
       <option value='#/settings'>Paramètres</option>
       <TreeItemOption data={data}/>
     </select>
-    <button on:click={clear}>Nouveau</button>
+    <button on:click={clear}>Effacer</button>
     <button on:click={simpleSave}>Enregistrer</button>
     <button on:click={saveAs}>Enregistrer sous...</button>
     <button on:click={open}>Ouvrir...</button>
