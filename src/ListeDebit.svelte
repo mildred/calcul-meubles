@@ -48,7 +48,7 @@
     .reduce((h,x) => {x.epaisseurs.forEach(ep => h[ep.epaisseur] = true); return h}, {}))
 
   function calculStatistics(total_group, totaux){
-    console.log("calculStatistics!!!!", total_group.individual().map(p => p.features))
+    //console.log("calculStatistics!!!!", total_group.individual().map(p => p.features))
     return total_group
       .flat_groups('', totaux)
       .map(group => {
@@ -63,7 +63,7 @@
         const {xmin, xmax, ymin, ymax, zmin, zmax} = group.bounding_box()
         const panneaux = group.pieces
           .filter(p => p.features.includes('panneau') || p.features.includes('panneau-seul'))
-        console.log(group.name, JSON.stringify(group.pieces.map(p => p.features)))
+        //console.log(group.name, JSON.stringify(group.pieces.map(p => p.features)))
         return {
           name:        group.name,
           dimension_x: xmax - xmin,

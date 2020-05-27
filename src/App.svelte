@@ -21,7 +21,7 @@
 
   $: data = {...initdata}
 
-  //$: console.log('App initdata =', initdata)
+  $: console.log('App initdata =', initdata)
   //$: console.log('App data =', data)
 
   let agencement = 'horizontal'

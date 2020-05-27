@@ -13,18 +13,15 @@
   export let state = {}
   let childrenState = []
 
-  let defaults = {}
-  $: defaults = {
+  let defaults = {
     children: [],
     childrenPos: [],
     type: 'Ensemble',
     id: 0,
-    name,
-    ...initdata
   }
 
-  let children = defaults.children
-  let childrenPos = defaults.childrenPos
+  let children = initdata.children
+  let childrenPos = initdata.childrenPos
 
   // These two lines are causing an infinite loop (especially the childrenPos
   // one). When the ChildrenPositions component below modifies the childrenPos
@@ -32,21 +29,39 @@
   // invalidated, although defaults was never modified. The solution is to hide
   // to svelte the relationship between those two properties in a function.
 
-  //$: childrenPos = defaults.childrenPos
-  //$: children = defaults.children
+  //$: childrenPos = initdata.childrenPos
+  //$: children = initdata.children
 
-  $: defaultsChanged(defaults)
+  $: initdataChanged(initdata)
 
-  function defaultsChanged(defaults){
-    childrenPos = defaults.childrenPos
-    children = defaults.children
+  function initdataChanged(initdata){
+    console.log("initdata changed")
+    childrenPos = initdata.childrenPos
+    children = initdata.children
   }
 
   let data
-  $: data = {
-    ...defaults,
-    childrenPos,
-    children,
+
+  //$: data = {
+  //  ...defaults,
+  //  name,
+  //  ...initdata,
+  //  childrenPos,
+  //  children,
+  //}
+
+  // Use updateData else svelte wrongly invalidates initdata (and others) when
+  // data is set.
+
+  $: updateData(defaults, name, initdata, childrenPos, children)
+  function updateData(defaults, name, initdata, childrenPos, children) {
+    data = {
+      ...defaults,
+      name,
+      ...initdata,
+      childrenPos,
+      children,
+    }
   }
 
   let pieces = []

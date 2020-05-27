@@ -12,18 +12,22 @@
   export let defaultChildrenPos = []
   export let drawings = false
 
-  /*
+  //*
   $: console.log('ChildrenPositions children = ', children)
   $: console.log('ChildrenPositions childrenState = ', childrenState)
   $: console.log('ChildrenPositions pieces = ', pieces)
   $: console.log('ChildrenPositions pieces_drawings = ', pieces_drawings)
-  $: console.log('ChildrenPositions childrenPos = ', childrenPos)
+  $: console.log('ChildrenPositions childrenPos = ', JSON.stringify(childrenPos, null, 2))
   $: console.log('ChildrenPositions defaultChildrenPos = ', defaultChildrenPos)
   $: console.log('ChildrenPositions drawings = ', drawings)
-  */
+  //*/
 
-  $: childrenPos = children
-    .map((_,i) => cleanObject(childrenPos[i] || {}))
+  $: childrenPos = resizeChildrenPos(children)
+
+  function resizeChildrenPos(children) {
+    console.log("resize childrenPos")
+    return children.map((_,i) => cleanObject(childrenPos[i] || {}))
+  }
 
   $: pieces = children
     .map((c, i) => {
