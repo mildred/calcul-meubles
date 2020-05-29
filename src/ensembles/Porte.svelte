@@ -242,8 +242,6 @@
     <label><span>Encastrée</span><InputCheckbox bind:checked={ui.encastree} def={defaults.encastree} /></label>
     <label><span>jeu encastrement (tout autour) : </span><InputNumber min=0 bind:value={ui.jeu_encastrement} def={defaults.jeu_encastrement}/> mm</label>
     </form>
-    <pre>defaults = {JSON.stringify(defaults, null, 2)}</pre>
-    <pre>ui = {JSON.stringify(ui, null, 2)}</pre>
   </div>
 
   <div slot="tables">
