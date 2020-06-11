@@ -13,6 +13,16 @@
   let par_epaiss = false
   let par_type = true
 
+  function comparePieces(p1, p2) {
+    return (
+      (p1.epaisseur < p2.epaisseur) ?  1 :
+      (p1.epaisseur > p2.epaisseur) ? -1 :
+      (p1.longueur  < p2.longueur)  ?  1 :
+      (p1.longueur  > p2.longueur)  ? -1 :
+      (p1.largeur   < p2.largeur)   ?  1 :
+      (p1.largeur   > p2.largeur)   ? -1 : 0);
+  }
+
   // Pièces, tableau non fusionné
   $: pieces2 = pieces.pieces
     .reduce((res, p) => res.concat(p.individual()), [])
@@ -23,6 +33,7 @@
         que: quantite * (p.que || p.piece.que || 1),
       })
     ))
+    .sort(comparePieces)
 
   // Pièces, tableau fusionné si merge == true
   $: pieces3 = !merge ? pieces2 :
@@ -30,7 +41,7 @@
     .map(family => (
       family.reduce((a, b) => (a == null ? b : a.merge(b)), null)
     ))
-
+    .sort(comparePieces)
 
   let cubeprice
   let cubemargin
