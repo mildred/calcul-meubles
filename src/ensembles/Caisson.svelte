@@ -25,6 +25,7 @@
     hauteur: 600,
     profondeur: 300,
     epaisseur_montants: 24,
+    epaisseur_traverses: 24,
     largeur_montants: 50,
     largeur_traverses: 50,
     profondeur_tenons_cotes: 30,
@@ -272,7 +273,7 @@
   }
 
   function calculCasiers(i, colonne, hauteurs, num, ui_colonne){
-    let espace_a_repartir = opt.hauteur - (num+1) * opt.epaisseur_montants
+    let espace_a_repartir = opt.hauteur - (num+1) * opt.epaisseur_traverses
     let hauteurs_definies = hauteurs.filter(x => (x && x != 0))
     let casiers_a_calculer = num - hauteurs_definies.length
     let espace_reparti = hauteurs_definies.reduce((a,b) => (a+b), 0)
@@ -323,7 +324,7 @@
     for(let j = 0; j < casiers.length; j++) {
       const jj = casiers.length - j - 1
       casiers[j].xpos = xpos
-      casiers[j].ypos = opt.epaisseur_montants * (jj + 1)
+      casiers[j].ypos = opt.epaisseur_traverses * (jj + 1)
         + casiers.slice(j+1).reduce((n,c) => n + c.hauteur, 0)
     }
     return casiers
@@ -341,14 +342,14 @@
       let hauteurs_g = casiers_g.slice(0, -1).map((casier, j) => (
         {
           gauche: [j, j+1],
-          [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_montants),
-          'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_montants,
+          [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_traverses),
+          'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_traverses,
         }))
       let hauteurs_d = casiers_d.slice(0, -1).map((casier, j) => (
         {
           droite: [j, j+1],
-          [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_montants),
-          'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_montants,
+          [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_traverses),
+          'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_traverses,
         }))
       let hauteurs = hauteurs_g.concat(hauteurs_d)
         .sort((a,b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)
@@ -402,9 +403,9 @@
           first:  first,
           last:   last,
           cote:   cote,
-          y1:     first ? (opt.largeur_traverses + (cote ? 0 : opt.epaisseur_montants))
+          y1:     first ? (opt.largeur_traverses + (cote ? 0 : opt.epaisseur_traverses))
                         : traverses[j-1].y2,
-          y2:     last  ? (opt.hauteur - opt.largeur_traverses - (cote ? 0 : opt.epaisseur_montants))
+          y2:     last  ? (opt.hauteur - opt.largeur_traverses - (cote ? 0 : opt.epaisseur_traverses))
                         : traverses[j].y1,
           gauche: first ? 0 : traverses[j-1].gauche[1],
           droite: first ? 0 : traverses[j-1].droite[1],
@@ -521,8 +522,8 @@
                                            : 0,
           hauteur:
             total    ? opt.hauteur :
-            demi     ? opt.hauteur - opt.epaisseur_montants :
-            encastre ? opt.hauteur - 2 * opt.epaisseur_montants
+            demi     ? opt.hauteur - opt.epaisseur_traverses :
+            encastre ? opt.hauteur - 2 * opt.epaisseur_traverses
                                            : 0,
         },
         defaultPosition: {
@@ -530,9 +531,9 @@
              - (total ? opt.epaisseur_montants :
                 demi  ? opt.epaisseur_montants / 2
                                             : 0),
-          y: opt.epaisseur_montants
-             - (total ? opt.epaisseur_montants :
-                demi  ? opt.epaisseur_montants / 2
+          y: opt.epaisseur_traverses
+             - (total ? opt.epaisseur_traverses :
+                demi  ? opt.epaisseur_traverses / 2
                                             : 0),
           z: opt.profondeur
              - (encastre ? epaisseur_porte : 0),
@@ -726,8 +727,8 @@
           encastre ? col.largeur
                                          : 0),
         hauteur:
-          total    ? cas.hauteur + 2 * opt.epaisseur_montants :
-          demi     ? cas.hauteur + opt.epaisseur_montants :
+          total    ? cas.hauteur + 2 * opt.epaisseur_traverses :
+          demi     ? cas.hauteur + opt.epaisseur_traverses :
           encastre ? cas.hauteur
                                          : 0,
       }
@@ -739,8 +740,8 @@
                 demi  ? opt.epaisseur_montants / 2
                                             : 0),
           y: cas.ypos
-             - (total ? opt.epaisseur_montants :
-                demi  ? opt.epaisseur_montants / 2
+             - (total ? opt.epaisseur_traverses :
+                demi  ? opt.epaisseur_traverses / 2
                                             : 0),
           z: opt.profondeur
              - (encastre ? epaisseur_porte : 0),
@@ -855,7 +856,7 @@
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
-      opt.epaisseur_montants)
+      opt.epaisseur_traverses)
     .usine_tenons(opt.profondeur_tenons_cotes)
     .put(null, null, opt.largeur_montants - opt.profondeur_tenons_cotes, 'zyx')
 
@@ -880,7 +881,7 @@
     .build(
       opt.largeur - 2 * (opt.epaisseur_montants - opt.profondeur_tenons),
       opt.largeur_traverses,
-      opt.epaisseur_montants)
+      opt.epaisseur_traverses)
     .usine_tenons(opt.profondeur_tenons)
     .put(opt.epaisseur_montants - opt.profondeur_tenons, null, null, 'xzy')
 
@@ -936,7 +937,7 @@
   $: montants_cloisons = Array.from(Array(opt.colonnes.length - 1).keys()).map((i) => (montant
     .add_name(`cloison n°${i+1}`)
     .build(
-      opt.hauteur - 2 * (opt.epaisseur_montants - opt.montants_inter_longueur_tenon),
+      opt.hauteur - 2 * (opt.epaisseur_traverses - opt.montants_inter_longueur_tenon),
       opt.largeur_montants,
       opt.epaisseur_montants)
     .usine_tenons(opt.montants_inter_longueur_tenon)
@@ -944,7 +945,7 @@
       opt.epaisseur_montants
         + opt.colonnes.slice(0, i+1).map(x => x.largeur).reduce((a, b) => a+b, 0)
         + i * opt.epaisseur_montants,
-      opt.epaisseur_montants - opt.montants_inter_longueur_tenon,
+      opt.epaisseur_traverses - opt.montants_inter_longueur_tenon,
       null,
       'yzx')))
 
@@ -995,7 +996,7 @@
     .build(
       opt.profondeur - 2 * (opt.largeur_montants - opt.profondeur_tenons_cotes),
       opt.largeur_traverses,
-      opt.epaisseur_montants)
+      opt.epaisseur_traverses)
     .usine_tenons(opt.profondeur_tenons_cotes)
     .put(
       opt.epaisseur_montants
@@ -1007,21 +1008,21 @@
 
   $: traverses_cloisons_h = traverses_cloisons.map((t, i) => (t
     .add_name("haut")
-    .put(null, opt.epaisseur_montants)))
+    .put(null, opt.epaisseur_traverses)))
 
   $: traverses_cloisons_b = traverses_cloisons.map((t, i) => (t
     .add_name("bas")
-    .put(null, opt.hauteur - opt.epaisseur_montants - t.largeur)))
+    .put(null, opt.hauteur - opt.epaisseur_traverses - t.largeur)))
 
   $: traverses_inter2_av_ar = opt.colonnes.map((col, i) => (
     col.casiers.map((casier, j) => (j == col.casiers.length-1) ? null : (
       traverse
         .add_name("intermédiaire")
-        .build(col.largeur, opt.largeur_traverses, opt.epaisseur_montants)
+        .build(col.largeur, opt.largeur_traverses, opt.epaisseur_traverses)
         .ajout_tenons(opt.profondeur_tenons)
         .put(
           casier.xpos - opt.profondeur_tenons,
-          casier.ypos - opt.epaisseur_montants,
+          casier.ypos - opt.epaisseur_traverses,
           null,
           'xzy')
     ))
@@ -1380,7 +1381,8 @@
 
     <hr/>
 
-    <label><span>Épaisseur montants et traverses : </span><InputNumber def={opt.epaisseur_montants} bind:value={ui.epaisseur_montants} min=0/> mm</label>
+    <label><span>Épaisseur montants : </span><InputNumber def={opt.epaisseur_montants} bind:value={ui.epaisseur_montants} min=0/> mm</label>
+    <label><span>Épaisseur traverses : </span><InputNumber def={opt.epaisseur_traverses} bind:value={ui.epaisseur_traverses} min=0/> mm</label>
     <label><span>Largeur montants : </span><InputNumber def={opt.largeur_montants} bind:value={ui.largeur_montants} min=0/> mm</label>
     <label><span>Largeur traverses : </span><InputNumber def={opt.largeur_traverses} bind:value={ui.largeur_traverses} min=0/> mm</label>
     <label><span>Profondeur tenons cotés : </span><InputNumber def={opt.profondeur_tenons_cotes} bind:value={ui.profondeur_tenons_cotes} min=0/> mm</label>
