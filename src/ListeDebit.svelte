@@ -91,6 +91,66 @@
       .filter(stat => stat.nb_pieces > 0)
   }
 
+  function save(){
+    let lines = [
+      [ "Pièce", "Qué", "long", "larg", "ep",
+        "Arrasement", "Surface (m²)", "epaisseur plateau",
+        `Cubage (x${cubemargin}%)`,
+        `Prix au m³ (${cubeprice})`
+      ].map(x => `"${x}"`).join(',')
+    ]
+    if(separer) lines.push("")
+    for(let piece of pieces3) {
+      let data = [
+        piece.longueur, piece.largeur, piece.epaisseur,
+        piece.string_arrasement(),
+        piece.largeur * piece.longueur / 1e6,
+        piece.epaisseur_plateau,
+        ((separer ? 1 : piece.que) * piece.cubage(cubemargin/100)).toFixed(9),
+        ((separer ? 1 : piece.que) * piece.prix(cubeprice, cubemargin/100)).toFixed(2)
+      ]
+      if(separer) {
+        var que = piece.que || 1
+        for(name of piece.name_list) {
+          lines.push([name, que].concat(data).map(x => `"${x}"`).join(','))
+          que = ""
+        }
+        lines.push("")
+      } else {
+        lines.push([
+          piece.name, piece.que || 1,
+        ].concat(data).map(x => `"${x}"`).join(','))
+      }
+    }
+    lines.push([
+      "Total", "", "", "", "", "", "", "",
+      total_cube.toFixed(9),
+      total_prix.toFixed(2)
+    ].map(x => `"${x}"`).join(','))
+
+    let csv = "\uFEFF" + lines.join("\n")
+
+    let filename = (prompt("Nom du fichier :", `débit - ${name}`) || "liste de débit") + ".csv"
+
+    let file = new window.File([csv], filename, {
+      type: 'text/csv'
+    })
+    let url = URL.createObjectURL(file);
+
+    try {
+      let a = document.createElement('a');
+      a.href = url;
+      a.style.display = 'none';
+      a.setAttribute('download', filename);
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
+
 </script>
 
 <style>
@@ -157,7 +217,7 @@
 <hr/>
 
 <table class="large styled">
-  <caption>Liste de débit</caption>
+  <caption>Liste de débit (<a href="javascript:void(0)" on:click={save}>ouvrir dans un tableur</a>)</caption>
   <tr>
     <th>Pièce (<label style="display: inline"><input bind:checked={separer} type=checkbox /> séparer</label>)</th>
     <th>Qué</th>
