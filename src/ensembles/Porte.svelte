@@ -22,7 +22,7 @@
     type:  'contre-profil',
     largeur: 400,
     hauteur: 600,
-    epaisseur: 18,
+    epaisseur: 22,
     largeur_montants: 70,
     largeur_traverses: 70,
     profondeur_tenons: 30,
