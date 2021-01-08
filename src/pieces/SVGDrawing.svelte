@@ -1,9 +1,16 @@
 <script>
   import SVGItem from '../pieces/SVGItem.svelte';
+  import JSCADView from '../pieces/JSCADView.svelte';
 
   export let pieces;
   export let zoom = 0.25;
   export let name = pieces.name || "Dessin"
+
+  let mode = '2d'
+
+  function setMode(m) {
+    mode = m
+  }
 
   $: pieces_list = (pieces instanceof Array) ? pieces : pieces.individual()
 
@@ -41,7 +48,16 @@
 
 <h3>{name}</h3>
 
+{#if mode == '3d'}
 <p>
+  <a href="javascript:void(0)" on:click={e => setMode('2d')}>2D</a>
+</p>
+<JSCADView item={pieces_list} />
+{/if}
+
+{#if mode == '2d'}
+<p>
+  <a href="javascript:void(0)" on:click={e => setMode('3d')}>3D</a><br/>
   Zoom : <input type=range bind:value={zoom} min=0 max=1 step=.05> {zoom*100} %
   <br/>
   <a href="javascript:void(0)" on:click={save}>Enregistrer image</a>
@@ -67,3 +83,4 @@
     {/each}
   </g>
 </svg>
+{/if}
