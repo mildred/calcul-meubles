@@ -19,7 +19,7 @@
   let defaults = {
     largeur: 400,
     profondeur: 300,
-    epaisseur: 18,
+    epaisseur: 17,
     ...initdata.defaults
   }
 

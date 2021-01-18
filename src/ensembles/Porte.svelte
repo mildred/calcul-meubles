@@ -31,7 +31,7 @@
     encastree: false,
     jeu_encastrement: 2,
     jeu_rainure: 1,
-    epaisseur_panneau: 15,
+    epaisseur_panneau: 16,
     inclure_panneau: true,
     ferrage: 'charnieres',
     ...initdata.defaults

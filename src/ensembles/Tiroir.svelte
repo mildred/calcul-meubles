@@ -29,7 +29,7 @@
     jeu_lateral: 6,
     jeu_dessous: 28,
     jeu_dessus: 7,
-    epaisseur_fond: 10,
+    epaisseur_fond: 9,
     inclure_fond: true,
     ...initdata.defaults
   }

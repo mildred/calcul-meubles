@@ -37,8 +37,9 @@ export default class Piece {
 
   get epaisseur_plateau() {
     return (this.epaisseur <= 20 - 3) ? 20 :
-           (this.epaisseur <= 27 - 3) ? 27 :
+           (this.epaisseur <= 30 - 3) ? 30 :
            (this.epaisseur <= 35 - 3) ? 35 :
+           (this.epaisseur <= 45 - 3) ? 45 :
            this.epaisseur + 10;
   }
 
