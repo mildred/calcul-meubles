@@ -5,6 +5,7 @@ import commonjs from 'rollup-plugin-commonjs';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import rollup_start_dev from './rollup_start_dev';
+import rollupGitVersion from 'rollup-plugin-git-version'
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -17,7 +18,8 @@ export default {
 		file: 'public/bundle.js'
 	},
 	plugins: [
-		json(),
+		rollupGitVersion(),
+		json({ exclude: 'package.json' }),
 		svelte({
 			// enable run-time checks when not in production
 			dev: !production,

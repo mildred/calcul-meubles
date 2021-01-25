@@ -1,4 +1,5 @@
 <script>
+  import { version } from '../package.json';
   import { setContext } from 'svelte';
   import { readable, writable, get } from 'svelte/store';
   import { routeDeclare } from './route.js';
@@ -258,6 +259,7 @@
     <button on:click={open}>Ouvrir...</button>
     {filename} <a href="@" on:click|preventDefault={rename}>✎</a>
     <div style="float: right">
+      <small>(version {version})</small>
       <label style="display: inline">
         Agencement :
         <select bind:value={agencement}>
@@ -284,6 +286,7 @@
         <button on:click={open}>Ouvrir...</button>
       </div>
       <p>{filename} <a href="@" on:click|preventDefault={rename}>✎</a></p>
+      <p><small>(version {version})</small></p>
     {/if}
     <ul>
       <li>

@@ -1,4 +1,5 @@
 <script>
+  import { version } from '../package.json';
   import { getContext } from 'svelte';
   import { get } from 'svelte/store';
   import { cleanObject, reduceToObject } from './utils.js';
@@ -98,6 +99,7 @@
 
 <div class="routable" bind:this={root_element}>
   <button on:click={(e) => window.location.hash = '#/'}>Fermer</button>
+  <p><small>(version {version})</small></p>
   <hr/>
 
   <label><span>Prix du bois : </span><InputNumber bind:value={ui.cubeprice} def={def.cubeprice} min=0/> €</label>
