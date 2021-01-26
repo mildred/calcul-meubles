@@ -15,8 +15,8 @@
 
   function comparePieces(p1, p2) {
     return (
-      (p1.epaisseur < p2.epaisseur) ?  1 :
-      (p1.epaisseur > p2.epaisseur) ? -1 :
+      (p1.epaisseur_plateau < p2.epaisseur_plateau) ?  1 :
+      (p1.epaisseur_plateau > p2.epaisseur_plateau) ? -1 :
       (p1.longueur  < p2.longueur)  ?  1 :
       (p1.longueur  > p2.longueur)  ? -1 :
       (p1.largeur   < p2.largeur)   ?  1 :
@@ -93,27 +93,37 @@
 
   function save(){
     let lines = [
-      [ "Pièce", "Qué", "long", "larg", "ep",
+      [ "Pièce", separer ? "Num" : "Qué", "long", "larg", "ep",
         "Arrasement", "Surface (m²)", "epaisseur plateau",
-        `Cubage (x${cubemargin}%)`,
-        `Prix au m³ (${cubeprice})`
-      ].map(x => `"${x}"`).join(',')
+        `Cubage (sans marge)`,
+        `Cubage (avec marge)`,
+        `Prix au m³`
+      ].map(x => `"${x}"`).join(','),
+      [ "", "", "", "", "",
+        "", "", "",
+        "",
+        `${cubemargin}%`,
+        cubeprice].map(x => `"${x}"`).join(','),
     ]
     if(separer) lines.push("")
+    let row = lines.length + 1
     for(let piece of pieces3) {
+      row = lines.length + 1
       let data = [
         piece.longueur, piece.largeur, piece.epaisseur,
         piece.string_arrasement(),
-        piece.largeur * piece.longueur / 1e6,
+        `=C${row}*D${row}/1000000`,
         piece.epaisseur_plateau,
-        ((separer ? 1 : piece.que) * piece.cubage(cubemargin/100)).toFixed(9),
-        ((separer ? 1 : piece.que) * piece.prix(cubeprice, cubemargin/100)).toFixed(2)
+        `=${separer ? '' : `B${row}*`}G${row}*H${row}/1000`,
+        `=I${row}*$J$2`,
+        `=J${row}*$K$2`
       ]
       if(separer) {
-        var que = piece.que || 1
+        var que = 1
         for(name of piece.name_list) {
           lines.push([name, que].concat(data).map(x => `"${x}"`).join(','))
-          que = ""
+          que = `=B${row}+1`
+          row = lines.length + 1
         }
         lines.push("")
       } else {
@@ -122,10 +132,12 @@
         ].concat(data).map(x => `"${x}"`).join(','))
       }
     }
+    row = lines.length + 1
     lines.push([
       "Total", "", "", "", "", "", "", "",
-      total_cube.toFixed(9),
-      total_prix.toFixed(2)
+      `=SUM(I2:I${row-1})`,
+      `=SUM(J2:J${row-1})`,
+      `=SUM(K2:K${row-1})`
     ].map(x => `"${x}"`).join(','))
 
     let csv = "\uFEFF" + lines.join("\n")
