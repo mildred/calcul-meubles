@@ -9,6 +9,7 @@ export function calculEstimations(settings, pieceg) {
 export function calculShallowGroupEstimations(settings, group, constants) {
   let type = group.component_type
   let postes = (settings.postes_estimations || [])
+    .map((estim, estim_idx) => ({...estim, estim_idx}))
     .filter(estim => estim.components[type])
     .map(estim => ({
       ...estim,

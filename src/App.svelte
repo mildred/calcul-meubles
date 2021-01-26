@@ -64,7 +64,7 @@
   function rename(){
     let new_filename = prompt("Nom du fichier", filename)
     if (new_filename == null) return false
-    filename = new_filename
+    filename = new_filename.replace(/\.json$/, '') + '.json'
     return true
   }
 
