@@ -203,7 +203,7 @@ data flow:
   }
 </style>
 
-<div class="routable component layout-{layout}" class:target={target} id="component-{path}">
+<div class="routable component any-layout layout-{layout}" class:target={target} id="component-{path}">
   <ul class="tabs">
     <li><a href="@" on:click={e => setLayout(e, 'all')}      class:active={layout=='all'}>Tout</a></li>
     <li><a href="@" on:click={e => setLayout(e, 'plan')}     class:active={layout=='plan'}>Plan</a></li>
@@ -211,6 +211,7 @@ data flow:
     <li><a href="@" on:click={e => setLayout(e, 'dim')}      class:active={layout=='dim'}>Dimensions</a></li>
     <li><a href="@" on:click={e => setLayout(e, 'tables')}   class:active={layout=='tables'}>Tableaux</a></li>
     <li><a href="@" on:click={e => setLayout(e, 'children')} class:active={layout=='children'}>Sous-éléments</a></li>
+    <li><a href="@" on:click={e => setLayout(e, 'debug')}    class:active={layout=='debug'}>Debug</a></li>
   </ul>
   <div class="component-grid">
     <div class="component-grid-plan">
@@ -250,13 +251,15 @@ data flow:
       </ul>
       {/if}
     </div>
+
+    <div class="component-grid-debug">
+      <slot name="debug"></slot>
+    </div>
   </div>
-  <!--
   <details>
-    <summary>data</summary>
-    <pre>JSON.stringify(data, null, 2)</pre>
+    <summary>debug</summary>
+    <pre>${JSON.stringify(data, null, 2)}</pre>
   </details>
-  -->
 </div>
 
 
