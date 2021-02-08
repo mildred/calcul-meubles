@@ -124,12 +124,6 @@
   let ui_montants = opt.montants
     .map(montant => ({...montant, panneaux_actifs: montant.panneaux.map(p => p.actif)}))
 
-  console.log("ui_montants = %o", JSON.stringify(ui_montants, null, 2))
-
-  $: console.log("ui_montants (reactif) = %o", JSON.stringify(ui_montants, null, 2))
-
-  $: console.log("opt.montants (reactif) = %o", JSON.stringify(opt.montants, null, 2))
-
   $: ui_montants = pipeline(
       ui_montants.slice(0, ui_montants.length - 1),
       m => Array(num_colonnes).fill(1).map((_, i) => m[i] || {panneaux_actifs:[]}),
