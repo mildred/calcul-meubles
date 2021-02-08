@@ -77,9 +77,9 @@
 
 </script>
 
-<Component bind:data={data} state={state} bind:children={children} bind:childrenState={childrenState} path={path} on:datachange>
+<Component bind:data={data} state={state} bind:children={children} bind:childrenState={childrenState} path={path} on:datachange multi_drawings={true}>
   <div slot="plan">
-    <h2>{data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
+    <h2>{data.type} {data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
     {#each pieces_drawings as pieces_d, i}
       <div data-count={pieces.length}>
         <SVGDrawing bind:zoom={zoom} pieces={pieces_d || []} name={`Dessin ${i+1}`} />

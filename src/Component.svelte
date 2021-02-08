@@ -20,16 +20,13 @@ data flow:
 
   const dispatch = createEventDispatcher();
   let components = getContext('App-components')
-  let layout = 'all';
-  getContext('settings').subscribe(settings => {
-    layout = settings.component_layout
-  })
 
   export let data
   export let state = {}
   export let childrenState = []
   export let children = data.children || []
   export let path = `${getContext('Component-path')}-${data.id}`
+  export let multi_drawings = false
 
   /*
   $: console.log(`Component ${data.type}(${path}) data =`, data)
@@ -78,15 +75,6 @@ data flow:
     target = (route.component_path == path)
   })
 
-  function setLayout(e, name){
-    if(e) e.preventDefault()
-    layout = name
-    getContext('settings').update(settings => ({
-      ...settings,
-      component_layout: layout,
-    }))
-  }
-
   function addChild(type){
     let id = nextId(children)
     let name = prompt("Nom du sous-ensemble :", `${path}-${id}`) || `${path}-${id}`
@@ -115,86 +103,6 @@ data flow:
     overflow: auto;
   }
 
-  ul.tabs {
-    flex: 0 0 auto;
-    margin: 0;
-    background-color: var(--light-bg-color);
-    border-bottom: solid 1px var(--border-color);
-  }
-  ul.tabs > li:last-child {
-    border-right: solid 1px var(--border-color);
-  }
-  ul.tabs > li {
-    border-top: solid 1px var(--border-color);
-    border-left: solid 1px var(--border-color);
-    margin: 0;
-    padding: 0;
-    margin-top: 2px;
-    display: inline;
-  }
-  ul.tabs > li > a {
-    padding: 0 1em;
-  }
-  ul.tabs > li > a.active {
-    background-color: white;
-  }
-
-  :global(.layout-plan) .component-grid > :not(.component-grid-plan) {
-    display: none;
-  }
-
-  :global(.layout-dim) .component-grid > :not(.component-grid-dim) {
-    display: none;
-  }
-
-  :global(.layout-tables) .component-grid > :not(.component-grid-tables) {
-    display: none;
-  }
-
-  :global(.layout-children) .component-grid > :not(.component-grid-plan):not(.component-grid-children) {
-    display: none;
-  }
-  :global(.layout-children) .component-grid > .component-grid-plan {
-    order: 1;
-    flex: 0 0 auto;
-    display: unset;
-    border-right: solid 1px var(--border-color);
-    overflow: auto;
-    resize: horizontal;
-  }
-  :global(.layout-children) .component-grid > .component-grid-children {
-    order: 2;
-    flex: 1 1 auto;
-    display: unset;
-    overflow: auto;
-  }
-  :global(.layout-children) .component-grid {
-    display: flex;
-    flex-flow: row nowrap;
-  }
-
-  :global(.layout-plan-dim) .component-grid > * {
-    display: none;
-  }
-  :global(.layout-plan-dim) .component-grid > .component-grid-plan {
-    order: 1;
-    flex: 0 0 auto;
-    display: unset;
-    border-right: solid 1px var(--border-color);
-    overflow: auto;
-    resize: horizontal;
-  }
-  :global(.layout-plan-dim) .component-grid > .component-grid-dim {
-    order: 2;
-    flex: 1 1 auto;
-    display: unset;
-    overflow: auto;
-  }
-  :global(.layout-plan-dim) .component-grid {
-    display: flex;
-    flex-flow: row nowrap;
-  }
-
   @media print {
     .component, .component-grid, .component-grid > * {
       display: block !important;
@@ -203,16 +111,7 @@ data flow:
   }
 </style>
 
-<div class="routable component any-layout layout-{layout}" class:target={target} id="component-{path}">
-  <ul class="tabs">
-    <li><a href="@" on:click={e => setLayout(e, 'all')}      class:active={layout=='all'}>Tout</a></li>
-    <li><a href="@" on:click={e => setLayout(e, 'plan')}     class:active={layout=='plan'}>Plan</a></li>
-    <li><a href="@" on:click={e => setLayout(e, 'plan-dim')} class:active={layout=='plan-dim'}>Plan + Dimensions</a></li>
-    <li><a href="@" on:click={e => setLayout(e, 'dim')}      class:active={layout=='dim'}>Dimensions</a></li>
-    <li><a href="@" on:click={e => setLayout(e, 'tables')}   class:active={layout=='tables'}>Tableaux</a></li>
-    <li><a href="@" on:click={e => setLayout(e, 'children')} class:active={layout=='children'}>Sous-éléments</a></li>
-    <li><a href="@" on:click={e => setLayout(e, 'debug')}    class:active={layout=='debug'}>Debug</a></li>
-  </ul>
+<div class="routable component" class:target={target} id="component-{path}">
   <div class="component-grid">
     <div class="component-grid-plan">
       <slot name="plan"></slot>
@@ -230,26 +129,31 @@ data flow:
     <div class="component-grid-children">
       <slot name="children"></slot>
 
+      {#if data.children && data.children.length}
+      <table>
+      {#each data.children as child, i}
+        {#if child.type}
+        <tr>
+          <td>
+            <a href="#/component/{path}-{child.id}">{child.type} {child.name}</a>
+            <a href="@" on:click|preventDefault={e => renameChild(i)}>✎</a>
+            <a href="@" on:click|preventDefault={e => deleteChild(i)}>🗑</a>
+            {#if (child.source||[]).length > 0}
+              <em>(automatique : {child.source.join("-")})</em>
+            {/if}
+          </td>
+        </tr>
+        {/if}
+      {/each}
+      </table>
+      {/if}
+
       <button on:click={e => addChild('Porte')}>Nouvelle porte</button>
       <button on:click={e => addChild('Caisson')}>Nouveau caisson</button>
       <button on:click={e => addChild('Etagere')}>Nouvelle étagère</button>
       <button on:click={e => addChild('Facade')}>Nouvelle façade</button>
       <button on:click={e => addChild('Tiroir')}>Nouveau tiroir</button>
       <button on:click={e => addChild('Ensemble')}>Nouveau sous-ensemble</button>
-
-      {#if data.children && data.children.length}
-      <ul>
-      {#each data.children as child, i}
-        {#if child.type}
-        <li>
-          <a href="#/component/{path}-{child.id}">{child.type} {child.name}</a>
-          <a href="@" on:click|preventDefault={e => renameChild(i)}>✎</a>
-          <a href="@" on:click|preventDefault={e => deleteChild(i)}>🗑</a>
-        </li>
-        {/if}
-      {/each}
-      </ul>
-      {/if}
     </div>
 
     <div class="component-grid-debug">
@@ -258,7 +162,7 @@ data flow:
   </div>
   <details>
     <summary>debug</summary>
-    <pre>${JSON.stringify(data, null, 2)}</pre>
+    <pre>{JSON.stringify(data, null, 2)}</pre>
   </details>
 </div>
 

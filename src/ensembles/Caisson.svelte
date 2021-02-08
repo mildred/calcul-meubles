@@ -154,7 +154,8 @@
   // Update children then data from opt
   //
 
-  let childrenPos = {}
+  let childrenPos
+  $: childrenPos = initdata.childrenPos || {}
   let children = data.children
   $: children = calculEnfants(opt, children)
 
@@ -437,7 +438,7 @@
 
     // Migrate old portes
     for(let i = 0; i < children.length; i++){
-      if(!children[i].source) children[i].source = ['Porte', 'colonne', i]
+      if(!children[i].source && i < opt.colonnes.length) children[i].source = ['Porte', 'colonne', i]
     }
 
     // Create new, remove old
@@ -472,7 +473,7 @@
     return children
 
     function creePorteColonne(colonne, i, children){
-      const child_idx = children.findIndex(c => c.source.join('-') == `Porte-colonne-${i}`)
+      const child_idx = children.findIndex(c => (c.source || []).join('-') == `Porte-colonne-${i}`)
       if (!colonne.porte.type) {
         // Pas de porte
         if (child_idx != -1) {
@@ -497,7 +498,7 @@
     }
 
     function configurePorteColonne(child) {
-      let source = [...child.source]
+      let source = [...(child.source || [])]
       let [i] = source.splice(2, 1)
       if(source.join('-') != 'Porte-colonne') return child
 
@@ -552,7 +553,7 @@
 
       for(let idx = children.length-1; idx >= 0; idx--){
         const child = children[idx]
-        let source = [...child.source] // Etagere-col-i-cas-j-num-n
+        let source = [...(child.source || [])] // Etagere-col-i-cas-j-num-n
         let [num] = source.splice(6,1)
         if(source.join('-') != `Etagere-col-${i}-cas-${j}-num`) continue
         if(num < num_etageres) continue
@@ -572,7 +573,7 @@
 
       for(let num = 0; num < num_etageres; num++){
         const src = `Etagere-col-${i}-cas-${j}-num-${num}`
-        const child_idx = children.findIndex(c => c.source.join('-') == src)
+        const child_idx = children.findIndex(c => (c.source || []).join('-') == src)
         if(child_idx != -1) continue
 
         if(name == null) {
@@ -591,7 +592,7 @@
     }
 
     function configureEtagere(child) {
-      let source = [...child.source]
+      let source = [...(child.source || [])]
       let [num] = source.splice(6, 1)
       let [j] = source.splice(4, 1)
       let [i] = source.splice(2, 1)
@@ -642,7 +643,7 @@
 
       // Supprimer la facade si elle n'est pas du bon type
       for(let idx = children.length-1; idx >= 0; idx--){
-        const source = children[idx].source.join('-')
+        const source = (children[idx].source || []).join('-')
         //console.log(source, variants, all_variants)
         console.log(source, children[idx].name)
         if (variants.includes(source) || !all_variants.includes(source)) break
@@ -659,8 +660,8 @@
       if(!casier.porte.type) return children
 
       if(casier.porte.double) {
-        const child_idx_g = children.findIndex(c => c.source.join('-') == variants[0])
-        const child_idx_d = children.findIndex(c => c.source.join('-') == variants[1])
+        const child_idx_g = children.findIndex(c => (c.source||[]).join('-') == variants[0])
+        const child_idx_d = children.findIndex(c => (c.source||[]).join('-') == variants[1])
         let namePrefix = `colonne n°${i+1}, casier n°${j+1}`
         if (child_idx_g == -1 && child_idx_d == -1) {
           namePrefix = prompt(`Quel nom donner aux ${type.toLowerCase()}s ?`, namePrefix) || namePrefix
@@ -682,7 +683,7 @@
           }]
         }
       } else {
-        const child_idx = children.findIndex(c => c.source.join('-') == variants[0])
+        const child_idx = children.findIndex(c => (c.source||[]).join('-') == variants[0])
         if (child_idx == -1) {
           children = [...children, {
             source: [type, 'col', i, 'cas', j],
@@ -697,7 +698,7 @@
     }
 
     function configurePorteFacadeCasier(child) {
-      let source = [...child.source]
+      let source = [...(child.source || [])]
       let [side] = source.splice(5, 1)
       let [j]    = source.splice(4, 1)
       let [i]    = source.splice(2, 1)
@@ -758,7 +759,7 @@
     }
 
     function creeTiroirCasier(colonne, i, casier, j, children){
-      const child_idx = children.findIndex(c => c.source.join('-') == `Tiroir-col-${i}-cas-${j}`)
+      const child_idx = children.findIndex(c => (c.source || []).join('-') == `Tiroir-col-${i}-cas-${j}`)
 
       // Supprimer le tiroir si il n'existe pas
       // Si il existe, return
@@ -785,7 +786,7 @@
     }
 
     function configureTiroir(child, children) {
-      let source = [...child.source]
+      let source = [...(child.source||[])]
       let [j] = source.splice(4, 1)
       let [i] = source.splice(2, 1)
       if(source.join('-') != 'Tiroir-col-cas') return child
@@ -793,7 +794,7 @@
       const col = opt.colonnes[i]; if(!col) return child;
       const cas = col.casiers[j];  if(!cas) return child;
 
-      const facade = children.find(c => c.source.join('-') == `${typePorte(cas)}-col-${i}-cas-${j}`) || {}
+      const facade = children.find(c => (c.source || []).join('-') == `${typePorte(cas)}-col-${i}-cas-${j}`) || {}
       const epaisseur_porte = facade ? ((facade.opt || {}).epaisseur || (facade.opt || {}).epaisseur_montants) : 0
       const retrait = (cas.porte.type == 'encastre') ? epaisseur_porte : 0
 
@@ -1090,6 +1091,10 @@
   $: all_pieces = pieces.concat(child_pieces)
 
   $: state.pieces = all_pieces
+
+  function rename(){
+    data.name = prompt(`Renommer "${data.name}" en :`, data.name) || data.name
+  }
 </script>
 
 <style>
@@ -1160,7 +1165,8 @@
 
 <Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} bind:children={children} on:datachange>
   <div slot="plan">
-    <SVGDrawing pieces={all_pieces} name={`Caisson ${data.name}`} />
+    <h2>{data.type} {data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
+    <SVGDrawing pieces={all_pieces} name="Dessin" />
   </div>
 
   <div class="main" slot="dim">
