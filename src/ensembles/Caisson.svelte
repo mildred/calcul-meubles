@@ -122,7 +122,7 @@
     })
 
   let ui_montants = opt.montants
-    .map(montant => ({...montant, panneaux_actifs: montant.panneaux.map(p => p.actif)}))
+    .map(montant => ({...montant, panneaux_actifs: (montant.panneaux ||[]).map(p => p.actif)}))
 
   $: ui_montants = pipeline(
       ui_montants.slice(0, ui_montants.length - 1),
