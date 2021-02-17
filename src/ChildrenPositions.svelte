@@ -12,7 +12,7 @@
   export let defaultChildrenPos = []
   export let drawings = false
 
-  //*
+  /*
   $: console.log('ChildrenPositions children = ', children)
   $: console.log('ChildrenPositions childrenState = ', childrenState)
   $: console.log('ChildrenPositions pieces = ', pieces)
@@ -22,11 +22,13 @@
   $: console.log('ChildrenPositions drawings = ', drawings)
   //*/
 
-  $: childrenPos = resizeChildrenPos(children)
+  let uiPos = []
+  $: uiPos = resizeChildrenPos(children)
+  $: childrenPos = uiPos
 
   function resizeChildrenPos(children) {
     return children
-      .map((_,i) => cleanObject(childrenPos[i] || {}))
+      .map((_,i) => cleanObject(uiPos[i] || {}))
       .map(c => ({...c, show: (c.show === null || c.show === undefined) ? true : c.show}))
   }
 
@@ -39,7 +41,7 @@
       let {x, y, z} = {
         x: 0, y: 0, z: 0,
         ...(defaultChildrenPos[i] || {}),
-        ...cleanObject(childrenPos[i] || {}),
+        ...cleanObject(uiPos[i] || {}),
       }
       return g.position(x, y, z)
     })
@@ -50,7 +52,7 @@
         d: 1,
         show: true,
         ...(defaultChildrenPos[i] || {}),
-        ...cleanObject(childrenPos[i] || {})
+        ...cleanObject(uiPos[i] || {})
       }
       let d = pos.d || 1;
       if(pos.show) res[d-1] = [...(res[d-1] || []), p];
@@ -77,15 +79,15 @@
 {#each children as child, i}
   {#if child.type}
   <tr>
-    <td><InputCheckbox tristate={false} bind:checked={childrenPos[i].show} /></td>
+    <td><InputCheckbox tristate={false} bind:checked={uiPos[i].show} /></td>
     <td>{child.type} {child.name}</td>
     <td style="text-align: right">{(pieces0[i]||{}).largeur}x{(pieces0[i]||{}).hauteur}x{(pieces0[i]||{}).profondeur}</td>
     {#if drawings}
-    <td><InputNumber bind:value={childrenPos[i].d} def={(defaultChildrenPos[i]||{}).d || 1} min={1} /></td>
+    <td><InputNumber bind:value={uiPos[i].d} def={(defaultChildrenPos[i]||{}).d || 1} min={1} /></td>
     {/if}
-    <td><InputNumber bind:value={childrenPos[i].x} def={(defaultChildrenPos[i]||{}).x || 0} /></td>
-    <td><InputNumber bind:value={childrenPos[i].y} def={(defaultChildrenPos[i]||{}).y || 0} /></td>
-    <td><InputNumber bind:value={childrenPos[i].z} def={(defaultChildrenPos[i]||{}).z || 0} /></td>
+    <td><InputNumber bind:value={uiPos[i].x} def={(defaultChildrenPos[i]||{}).x || 0} /></td>
+    <td><InputNumber bind:value={uiPos[i].y} def={(defaultChildrenPos[i]||{}).y || 0} /></td>
+    <td><InputNumber bind:value={uiPos[i].z} def={(defaultChildrenPos[i]||{}).z || 0} /></td>
     <td>mm</td>
   </tr>
   {/if}
