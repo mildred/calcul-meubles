@@ -17,8 +17,8 @@
   let data = {...initdata}
 
   let defaults = {
-    largeur: 400,
-    profondeur: 300,
+    longueur: 400,
+    hauteur: 300,
     epaisseur: 17,
     ...initdata.defaults
   }
@@ -33,13 +33,13 @@
 
   let zoom = 0.5
 
-  $: etagere = new Piece()
-    .add_name("Étagère")
-    .build(opt.largeur, opt.profondeur, opt.epaisseur)
-    .put(0, 0, 0, 'xzy')
+  $: plinthe = new Piece()
+    .add_name("Plinthe")
+    .build(opt.longueur, opt.hauteur, opt.epaisseur)
+    .put(0, 0, 0, 'xyz')
     .add_features('panneau-seul')
 
-  $: pieces = [etagere]
+  $: pieces = [plinthe]
 
   $: state.pieces = pieces
 </script>
@@ -65,17 +65,17 @@
 
 <Component bind:data={data} path={path} state={state} on:datachange>
   <div slot="plan">
-    <SVGDrawing pieces={pieces} name={`Étagère ${data.name}`} />
+    <SVGDrawing pieces={pieces} name={`Plinthe ${data.name}`} />
   </div>
 
   <div class="main" slot="dim">
     <form>
-    <label><span>Longueur   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>
-    <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.profondeur} def={defaults.profondeur} force={defaults.force_profondeur}/> mm</label>
+    <label><span>Longueur   : </span><InputNumber min=0 bind:value={ui.longueur} def={defaults.longueur} force={defaults.force_longueur}/> mm</label>
+    <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.hauteur} def={defaults.hauteur} force={defaults.force_hauteur}/> mm</label>
     <label><span>Épaisseur  : </span><InputNumber min=0 bind:value={ui.epaisseur} def={defaults.epaisseur} force={defaults.force_epaisseur}/> mm</label>
   </div>
 
   <div slot="tables">
-    <ListeDebit pieces={new Group(pieces, `Étagère ${data.name}`, 'Etagere')} />
+    <ListeDebit pieces={new Group(pieces, `Plinthe ${data.name}`, 'Plinthe')} />
   </div>
 </Component>

@@ -113,6 +113,16 @@ data flow:
 
 <div class="routable component" class:target={target} id="component-{path}">
   <div class="component-grid">
+    <div>
+      <button on:click={e => addChild('Porte')}>Nouvelle porte</button>
+      <button on:click={e => addChild('Caisson')}>Nouveau caisson</button>
+      <button on:click={e => addChild('Etagere')}>Nouvelle étagère</button>
+      <button on:click={e => addChild('Plinthe')}>Nouvelle plinthe</button>
+      <button on:click={e => addChild('Facade')}>Nouvelle façade</button>
+      <button on:click={e => addChild('Tiroir')}>Nouveau tiroir</button>
+      <button on:click={e => addChild('Ensemble')}>Nouveau sous-ensemble</button>
+    </div>
+
     <div class="component-grid-plan">
       <slot name="plan"></slot>
     </div>
@@ -151,6 +161,7 @@ data flow:
       <button on:click={e => addChild('Porte')}>Nouvelle porte</button>
       <button on:click={e => addChild('Caisson')}>Nouveau caisson</button>
       <button on:click={e => addChild('Etagere')}>Nouvelle étagère</button>
+      <button on:click={e => addChild('Plinthe')}>Nouvelle plinthe</button>
       <button on:click={e => addChild('Facade')}>Nouvelle façade</button>
       <button on:click={e => addChild('Tiroir')}>Nouveau tiroir</button>
       <button on:click={e => addChild('Ensemble')}>Nouveau sous-ensemble</button>
