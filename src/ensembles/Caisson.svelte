@@ -477,7 +477,7 @@
       if (!colonne.porte.type) {
         // Pas de porte
         if (child_idx != -1) {
-          if (confirm(`Caisson ${data.name}\nSupprimer la porte ${children[child_idx].name} ?`)) {
+          if (confirm(`Caisson ${data.name}\nSupprimer la porte ${children[child_idx].name} ?\n\nATTENTION : clique sur OK uniquement, sinon il y aura une porte de trop.`)) {
             children.splice(child_idx, 1)
           } else {
             children[child_idx].source.push('disabled')
@@ -558,7 +558,7 @@
         if(source.join('-') != `Etagere-col-${i}-cas-${j}-num`) continue
         if(num < num_etageres) continue
 
-        if (confirm(`Caisson ${data.name}\nSupprimer l'étagère ${child.name} ?`)) {
+        if (confirm(`Caisson ${data.name}\nSupprimer l'étagère ${child.name} ?\n\nATTENTION : clique sur OK uniquement, sinon il y aura une étagère de trop.`)) {
           children.splice(i, 1)
         } else {
           children[i].source.push('disabled')
@@ -648,8 +648,7 @@
         console.log(source, children[idx].name)
         if (variants.includes(source) || !all_variants.includes(source)) break
 
-        if (confirm(`Caisson ${data.name}\nSupprimer la ${children[idx].type}
-        ${children[idx].name} ?`)) {
+        if (confirm(`Caisson ${data.name}\nSupprimer la ${children[idx].type} ${children[idx].name} ?\n\nATTENTION : clique sur OK uniquement, sinon il y aura une ${children[idx].type} de trop.`)) {
           children.splice(idx, 1)
         } else {
           children[idx].source.push('disabled')
@@ -766,7 +765,7 @@
 
       if (!casier.tiroir) {
         // Pas de tiroir
-        if (child_idx != -1 && confirm(`Supprimer le tiroir ${children[child_idx].name} ?`)) {
+        if (child_idx != -1 && confirm(`Supprimer le tiroir ${children[child_idx].name} ?\n\nATTENTION : clique sur OK uniquement, sinon il y aura un tiroir de trop.`)) {
           children.splice(child_idx, 1)
         }
         return children
