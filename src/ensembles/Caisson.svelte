@@ -962,8 +962,7 @@
       (piece_panneau
         .add_name("haut", `colonne n°${i+1}`)
         .build(
-          col.largeur + opt.epaisseur_montants - opt.epaisseur_traverses / 2
-                      + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
+          col.largeur + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
           opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
           opt.epaisseur_panneau)
         .put(
@@ -983,8 +982,7 @@
       (piece_panneau
         .add_name("bas", `colonne n°${i+1}`)
         .build(
-          col.largeur + opt.epaisseur_montants - opt.epaisseur_traverses / 2
-                      + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
+          col.largeur + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
           opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
           opt.epaisseur_panneau)
         .put(
