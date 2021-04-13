@@ -21,7 +21,7 @@
 </script>
 
 <input
-  style="width: {size+1}em"
+  style="width: {parseInt(size)+1}em"
   type=number
   bind:value={value}
   placeholder={ui.placeholder}

@@ -1349,7 +1349,7 @@
         <tr>
           <th>Nombre de traverses</th>
           {#each ui_montants as ui_montant, i}
-            <td colspan="2"><input type=number placeholder={opt.montants[i].traverses.length} size=2/></td>
+            <td colspan="2"><InputNumber size=5 def={opt.montants[i].traverses.length}/></td>
           {/each}
         </tr>
         <tr>
@@ -1366,10 +1366,10 @@
             {#if j < opt.montants[i].traverses.length}
               <td>
                 <!-- {JSON.stringify(opt.montants[i].traverses[j][0], null, 2)} -->
-                <input size=5 type=number placeholder={opt.montants[i].traverses[j].h}/>
+                <InputNumber size=5 def={opt.montants[i].traverses[j].h}/>
               </td>
               <td>
-                <input size=5 type=number placeholder={opt.montants[i].traverses[j][0]}/>
+                <InputNumber size=5 def={opt.montants[i].traverses[j][0]}/>
               </td>
             {:else}
               <td></td><td></td>
