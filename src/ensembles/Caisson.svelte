@@ -36,6 +36,9 @@
     panneau_dessus: true,
     panneau_dessous: true,
     montants_inter_longueur_tenon: 20,
+    separer_haut: false,
+    separer_bas: false,
+    hauteur_traverses_separees: 70,
     montants: [
       {
       },
@@ -44,6 +47,8 @@
     ],
     colonnes: [
       {
+        panneau_haut: true,
+        panneau_bas: true,
         porte: {},
         casiers: [
           {
@@ -195,6 +200,8 @@
       if (i >= num_colonnes) break;
 
       opt2.colonnes[i] = {
+        panneau_haut: true,
+        panneau_bas: true,
         largeur: null,
         num_casiers: 1,
         casiers: [
@@ -263,6 +270,10 @@
             ...col.porte,
             ...ui_colonne.porte,
           },
+          ...cleanObject({
+            panneau_haut: ui_colonne.panneau_haut,
+            panneau_bas: ui_colonne.panneau_bas,
+          })
         }),
         col => {col.casiers = (col.casiers || []).slice(0, num); return col},
         col => calculCasiers(i, col, hauteur_casiers_colonnes[i], num, ui_colonne),
@@ -914,13 +925,47 @@
       opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
       'xzy')
 
-  $: panneau_h = !opt.panneau_dessus ? null : panneaux_haut_bas
-    .add_name("haut")
-    .put(null, 0)
+  $: panneau_h = opt.separer_haut ? (
+    opt.colonnes.map((col, i) => (
+      (col.panneau_haut == false) ? null :
+      (piece_panneau
+        .add_name("haut", `colonne n°${i+1}`)
+        .build(
+          col.largeur + opt.epaisseur_montants - opt.epaisseur_traverses / 2
+                      + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
+          opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+          opt.epaisseur_panneau)
+        .put(
+          opt.epaisseur_montants
+            + opt.colonnes.slice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
+            + i * opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+          opt.hauteur - panneaux_haut_bas.epaisseur,
+          opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+          'xzy'))))) : (
+    [!opt.panneau_dessus ? null : panneaux_haut_bas
+      .add_name("haut")
+      .put(null, 0)])
 
-  $: panneau_b = !opt.panneau_dessous ? null : panneaux_haut_bas
-    .add_name("bas")
-    .put(null, opt.hauteur - panneaux_haut_bas.epaisseur)
+  $: panneau_b = opt.separer_bas ? (
+    opt.colonnes.map((col, i) => (
+      (col.panneau_bas == false) ? null :
+      (piece_panneau
+        .add_name("bas", `colonne n°${i+1}`)
+        .build(
+          col.largeur + opt.epaisseur_montants - opt.epaisseur_traverses / 2
+                      + 2 * (opt.profondeur_rainure - opt.jeu_rainure),
+          opt.profondeur - 2 * (opt.largeur_traverses - opt.profondeur_rainure + opt.jeu_rainure),
+          opt.epaisseur_panneau)
+        .put(
+          opt.epaisseur_montants
+            + opt.colonnes.slice(0, i).map(x => x.largeur).reduce((a, b) => a+b, 0)
+            + i * opt.epaisseur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+          0,
+          opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure,
+          'xzy'))))) : (
+    [!opt.panneau_dessous ? null : panneaux_haut_bas
+      .add_name("bas")
+      .put(null, opt.hauteur - panneaux_haut_bas.epaisseur)])
 
   $: panneaux_dos = opt.colonnes.map((col, i) => (col.casiers.map((casier, j) =>
     (casier.panneau_dos == false) ? null :
@@ -1010,11 +1055,13 @@
 
   $: traverses_cloisons_h = traverses_cloisons.map((t, i) => (t
     .add_name("haut")
-    .put(null, opt.epaisseur_traverses)))
+    .build_if(opt.separer_haut, null, opt.hauteur_traverses_separees)
+    .put(null, opt.hauteur - (opt.separer_haut ? opt.hauteur_traverses_separees : opt.epaisseur_traverses + t.largeur))))
 
   $: traverses_cloisons_b = traverses_cloisons.map((t, i) => (t
     .add_name("bas")
-    .put(null, opt.hauteur - opt.epaisseur_traverses - t.largeur)))
+    .build_if(opt.separer_bas, null, opt.hauteur_traverses_separees)
+    .put(null, opt.separer_bas ? 0 : opt.epaisseur_traverses)))
 
   $: traverses_inter2_av_ar = opt.colonnes.map((col, i) => (
     col.casiers.map((casier, j) => (j == col.casiers.length-1) ? null : (
@@ -1073,8 +1120,9 @@
     montant_ar_g, montant_av_g, montant_ar_d, montant_av_d,
     traverse_cote_b_d, traverse_cote_b_g, traverse_cote_h_d, traverse_cote_h_g,
     traverse_av_h, traverse_av_b, traverse_ar_h, traverse_ar_b,
-    panneau_h, panneau_b,
   ]
+    .concat(panneau_h)
+    .concat(panneau_b)
     .concat(panneaux_dos.reduce((a,b) => a.concat(b), []))
     .concat(panneaux_cote_et_cloisons.reduce((a,b) => a.concat(b), []))
     .concat(montants_cloisons_ar)
@@ -1177,6 +1225,14 @@
     <label><span>Largeur    : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur}/> mm</label>
     <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.profondeur} def={defaults.profondeur}/> mm </label>
     <label><span>Colonnes   : </span><input type=number bind:value={num_colonnes} min=1/></label>
+    <label><InputCheckbox tristate={false}
+      def={defaults.separer_haut}
+      bind:checked={ui.separer_haut}
+      /> séparer le panneau du haut (traverses de {opt.hauteur_traverses_separees})</label>
+    <label><InputCheckbox tristate={false}
+      def={defaults.separer_bas}
+      bind:checked={ui.separer_bas}
+      /> séparer le panneau du bas (traverses de {opt.hauteur_traverses_separees})</label>
 
     <table>
       <tr>
@@ -1217,6 +1273,7 @@
             <br/>
             {/if}
             <input type=number min=1
+              title={`colonne n° ${i+1}, casier n°${j+1}`}
               placeholder={colonne.casiers[j].hauteur}
               bind:value={hauteur_casiers_colonnes[i][j]}
               style="width: 5em" />
@@ -1339,7 +1396,12 @@
         </fieldset>
         <fieldset>
           <legend>Panneaux col°{selection_casier_i+1} cas°{selection_casier_j+1}</legend>
-          {#if selection_casier_j == 0}
+          {#if selection_casier_j == 0 && ui.separer_haut}
+          <label><InputCheckbox tristate={false}
+            def={opt.colonnes[selection_casier_i].panneau_haut}
+            bind:checked={ui_colonnes[selection_casier_i].panneau_haut}
+            /> panneau dessus (colonne)</label>
+          {:else if selection_casier_j == 0}
           <label><InputCheckbox tristate={false}
             def={opt.panneau_dessus}
             bind:checked={ui.panneau_dessus}
@@ -1359,6 +1421,11 @@
             def={opt.colonnes[selection_casier_i].casiers[selection_casier_j].panneau_dessous}
             bind:checked={ui_colonnes[selection_casier_i].casiers[selection_casier_j].panneau_dessous}
             /> panneau dessous</label>
+          {:else if ui.separer_bas}
+          <label><InputCheckbox tristate={false}
+            def={opt.colonnes[selection_casier_i].panneau_bas}
+            bind:checked={ui_colonnes[selection_casier_i].panneau_bas}
+            /> panneau dessous (colonne)</label>
           {:else}
           <label><InputCheckbox tristate={false}
             def={opt.panneau_dessous}

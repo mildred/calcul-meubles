@@ -18,6 +18,11 @@ export default class Piece {
     this.features   = []
   }
 
+  update_if(cond, props) {
+    if(cond) return this.update(props);
+    else return this;
+  }
+
   update(props) {
     if (props.features && props.features.length == 1 && props.features[0] == true) {
       console.log("WARNING: incorrect feature %o", props)
@@ -98,6 +103,11 @@ export default class Piece {
       ...this,
       que: this.que * que
     })
+  }
+
+  build_if(cond, longueur, largeur, epaisseur){
+    if(!cond) return this;
+    return this.build(longueur, largeur, epaisseur)
   }
 
   build(longueur, largeur, epaisseur) {
