@@ -127,13 +127,21 @@
     })
 
   let ui_montants = opt.montants
-    .map(montant => ({...montant, panneaux_actifs: (montant.panneaux ||[]).map(p => p.actif)}))
+    .map(montant => ({
+      traverses: [],
+      ...montant,
+      panneaux_actifs: (montant.panneaux ||[]).map(p => p.actif)
+    }))
 
   $: ui_montants = pipeline(
       ui_montants.slice(0, ui_montants.length - 1),
       m => Array(num_colonnes).fill(1).map((_, i) => m[i] || {panneaux_actifs:[]}),
       m => m.concat([ui_montants[ui_montants.length-1]]))
-    .map(montant => ({...montant, panneaux_actifs: [...(montant.panneaux_actifs||[])]}))
+    .map(montant => ({
+      traverses: [],
+      ...montant,
+      panneaux_actifs: [...(montant.panneaux_actifs||[])]
+    }))
 
   let selection_casier_input = '0,0'
   $: [selection_casier_i, selection_casier_j] = selection_casier_input.split(',').map(n => parseInt(n))
@@ -365,9 +373,16 @@
           [0]: casier.ypos - (casier.tiroir ? 0 : opt.epaisseur_traverses),
           'h': casier.tiroir ? opt.largeur_traverses : opt.epaisseur_traverses,
         }))
+
+      // Fusion des hauteurs gauche et droite
+      // tri par la mesure [0] qui est la position verticale
+      // création de la mesure [1] qui est la position du haut de la traverse
+      // les traverses se recouvrant ne sont pas fusionnées
+
       let hauteurs = hauteurs_g.concat(hauteurs_d)
         .sort((a,b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)
         .map(h => ({...h, [1]: h[0] + h.h}))
+
       //console.log(`opt.montants[${i}] opt.colonnes[${i-1}] =`, opt.colonnes[i-1])
       //console.log(`opt.montants[${i}] opt.colonnes[${i}] =`, opt.colonnes[i])
       //console.log(`opt.montants[${i}] hauteurs_g =`, hauteurs_g)
@@ -375,14 +390,27 @@
       //console.log(`opt.montants[${i}] hauteurs_d =`, hauteurs_d)
       //console.log(`opt.montants[${i}] hauteurs_d =`, hauteurs_d.map(h => h[0]))
       //console.log(`opt.montants[${i}] hauteurs =`, hauteurs)
+
+      // Fusionm des traverses se chevauchant
+
       let traverses = hauteurs
         .reduce((hh, h1) => {
+
+          // Fusion, si aucune hauteur traitée, on utilise la hauteur courante
+          // dans hh (la liste de toutes les hauteurs)
           if (hh.length == 0) return [{
             gauche: [0, 0],
             droite: [0, 0],
             ...h1
           }]
+
+          // h0: dernière hauteur
           let h0 = hh[hh.length-1]
+
+          // Si la dernière hauteur se chevauche avec la hauteur en cours,
+          // modifier la valeur [1] de la dernière hauteur pour prendre la
+          // valeur haute courante et augmenter la dernière hauteur
+
           if (h1[1] - h0[0] <= opt.largeur_traverses) {
             hh[hh.length-1] = {
               ...h0,
@@ -391,6 +419,9 @@
             }
             return hh
           }
+
+          // Sinon, pas de chevauchement, on retourne la hauteur courante
+
           return hh.concat([{
             gauche: [h0.gauche[1], h0.gauche[1]],
             droite: [h0.droite[1], h0.droite[1]],
@@ -1144,73 +1175,80 @@
   }
 </script>
 
-<style>
-  form > label {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    max-width: 30em;
-  }
-  form > label > *:first-child {
-    flex-grow: 1;
-  }
-  hr.clear {
-    clear: both;
-    border: none;
-  }
-  td {
-    vertical-align: top;
-  }
-  table.panneaux .center {
-    text-align: center
-  }
-  table.panneaux .vertical {
-    //transform: rotate(-90deg);
-    //transform-origin: left;
-    //text-orientation: mixed;
-    writing-mode: sideways-lr;
-    min-width: 1em;
-  }
-
-  .meuble {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    margin: 0.5em;
-  }
-  .meuble .colonne {
-    display: flex;
-    flex-direction: column;
-    width: 2em;
-  }
-  .meuble .colonne .casier {
-    border: 1px solid #eee;
-    text-align: center;
-  }
-  .meuble .colonne .casier input[type=radio] {
-    margin: 0.5em;
-  }
-
-  .meuble .casier.panneau-haut           { border-top: 3px solid black; }
-  .meuble .casier.panneau-bas            { border-bottom: 3px solid black; }
-  .meuble .casier.panneau-gauche-partiel { border-left: 3px dotted black; }
-  .meuble .casier.panneau-droit-partiel  { border-right: 3px dotted black; }
-  .meuble .casier.panneau-gauche         { border-left: 3px solid black; }
-  .meuble .casier.panneau-droit          { border-right: 3px solid black; }
-  .meuble .casier.panneau-dos            { background-color: #ddd; }
-
-  .prefs-casier {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-  }
-
-  .prefs-casier > * {
-    margin: 0.5em;
-  }
-</style>
-
 <Component bind:data={data} path={path} state={state} bind:childrenState={childrenState} bind:children={children} on:datachange>
+  <style>
+    form > label {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      max-width: 30em;
+    }
+    form > label:not(.no-align) > *:first-child {
+      flex-grow: 1;
+    }
+    hr.clear {
+      clear: both;
+      border: none;
+    }
+    td {
+      vertical-align: top;
+    }
+    table.panneaux .center {
+      text-align: center
+    }
+    table.panneaux .vertical {
+      //transform: rotate(-90deg);
+      //transform-origin: left;
+      //text-orientation: mixed;
+      writing-mode: sideways-lr;
+      min-width: 1em;
+    }
+
+    .meuble {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      margin: 0.5em;
+    }
+    .meuble .colonne {
+      display: flex;
+      flex-direction: column;
+      width: 2em;
+    }
+    .meuble .colonne .casier {
+      border: 1px solid #eee;
+      text-align: center;
+    }
+    .meuble .colonne .casier input[type=radio] {
+      margin: 0.5em;
+    }
+
+    .meuble .casier.panneau-haut           { border-top: 3px solid black; }
+    .meuble .casier.panneau-bas            { border-bottom: 3px solid black; }
+    .meuble .casier.panneau-gauche-partiel { border-left: 3px dotted black; }
+    .meuble .casier.panneau-droit-partiel  { border-right: 3px dotted black; }
+    .meuble .casier.panneau-gauche         { border-left: 3px solid black; }
+    .meuble .casier.panneau-droit          { border-right: 3px solid black; }
+    .meuble .casier.panneau-dos            { background-color: #ddd; }
+
+    .prefs-casier {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
+    .prefs-casier > * {
+      margin: 0.5em;
+    }
+
+    .vertical-text {
+      /*transform: rotate(90deg);*/
+      writing-mode: vertical-lr;
+      width: 1rem;
+      padding-top: 2rem;
+    }
+  </style>
+
   <div slot="plan">
     <h2>{data.type} {data.name} <a href="@" on:click|preventDefault={rename}>✎</a></h2>
     <SVGDrawing pieces={all_pieces} name="Dessin" />
@@ -1225,11 +1263,11 @@
     <label><span>Largeur    : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur}/> mm</label>
     <label><span>Profondeur : </span><InputNumber min=0 bind:value={ui.profondeur} def={defaults.profondeur}/> mm </label>
     <label><span>Colonnes   : </span><input type=number bind:value={num_colonnes} min=1/></label>
-    <label><InputCheckbox tristate={false}
+    <label class="no-align"><InputCheckbox tristate={false}
       def={defaults.separer_haut}
       bind:checked={ui.separer_haut}
       /> séparer le panneau du haut (traverses de {opt.hauteur_traverses_separees})</label>
-    <label><InputCheckbox tristate={false}
+    <label class="no-align"><InputCheckbox tristate={false}
       def={defaults.separer_bas}
       bind:checked={ui.separer_bas}
       /> séparer le panneau du bas (traverses de {opt.hauteur_traverses_separees})</label>
@@ -1237,9 +1275,14 @@
     <table>
       <tr>
         <td></td>
+        <td rowspan="4" class="vertical-text">coté gauche</td>
         {#each opt.colonnes as colonne, i}
+          {#if i > 0}
+          <td class="vertical-text" rowspan="4">cloison n°{i}</td>
+          {/if}
           <th>Colonne n°{i+1}</th>
         {/each}
+        <td class="vertical-text" rowspan="4">coté droit</td>
       </tr>
       <tr>
         <td>Largeur intérieure&nbsp;:&nbsp;</td>
@@ -1288,6 +1331,54 @@
     <p>Attention : trop de largeurs sont définies en même temps</p>
     {/if}
 
+    <fieldset>
+      <legend>Subdivisions des cloisons (ne pas modifier, en cours de travail)</legend>
+      <table class="styled">
+        <tr>
+          <td></td>
+          {#each ui_montants as ui_montant, i}
+            {#if i == 0}
+            <th colspan="2">coté gauche</th>
+            {:else if i == ui_montants.length - 1}
+            <th colspan="2">coté droit</th>
+            {:else}
+            <th colspan="2">cloison n°{i}</th>
+            {/if}
+          {/each}
+        </tr>
+        <tr>
+          <th>Nombre de traverses</th>
+          {#each ui_montants as ui_montant, i}
+            <td colspan="2"><input type=number placeholder={opt.montants[i].traverses.length} size=2/></td>
+          {/each}
+        </tr>
+        <tr>
+          <th>Traverses</th>
+          {#each ui_montants as ui_montant, i}
+            <td>hauteur traverse</td>
+            <td>position du bas</td>
+          {/each}
+        </tr>
+        {#each [...new Array(Math.max(...opt.montants.map(m => m.traverses.length))).keys()].reverse() as j}
+        <tr>
+          <td>Traverse n°{j+1}</td>
+          {#each ui_montants as ui_montant, i}
+            {#if j < opt.montants[i].traverses.length}
+              <td>
+                <!-- {JSON.stringify(opt.montants[i].traverses[j][0], null, 2)} -->
+                <input size=5 type=number placeholder={opt.montants[i].traverses[j].h}/>
+              </td>
+              <td>
+                <input size=5 type=number placeholder={opt.montants[i].traverses[j][0]}/>
+              </td>
+            {:else}
+              <td></td><td></td>
+            {/if}
+          {/each}
+        </tr>
+        {/each}
+    </fieldset>
+
     <hr/>
 
     <div class="prefs-casier">
@@ -1300,10 +1391,11 @@
           {#each colonne.casiers as casier, j}
           <label
             class="casier casier-{i}-{j}"
-            class:panneau-haut={  j == 0 ? opt.panneau_dessus :
-                                  opt.colonnes[i].casiers[j-1].panneau_dessous}
-            class:panneau-bas={   j < ui_colonnes[i].casiers.length-1 ?
-                                  opt.colonnes[i].casiers[j].panneau_dessous :
+            class:panneau-haut={  j > 0 ? opt.colonnes[i].casiers[j-1].panneau_dessous :
+                                  opt.separer_haut ?  opt.colonnes[i].panneau_haut :
+                                  opt.panneau_dessus }
+            class:panneau-bas={   j < ui_colonnes[i].casiers.length-1 ? opt.colonnes[i].casiers[j].panneau_dessous :
+                                  opt.separer_bas ? opt.colonnes[i].panneau_bas :
                                   opt.panneau_dessous}
             class:panneau-gauche={opt.montants[i].panneaux
                                   .map((p,k) => p.droite != j || opt.montants[i].panneaux[k].actif)
