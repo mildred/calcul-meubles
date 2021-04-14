@@ -55,7 +55,7 @@ data flow:
   }
 
   function deleteChild(i){
-    if(!confirm(`Supprimer ${children[i].name} ?`)) return
+    if(!confirm(`Supprimer ${children[i].name} (#${i}) ?`)) return
     let children2 = [...children]
     children2.splice(i, 1)
     console.log("delete", i, children, children2)
@@ -179,7 +179,7 @@ data flow:
 
 
 {#if data.children && data.children.length}
-{#each data.children as child, i}
+{#each data.children as child, i (child.id)}
   <svelte:component
     this={components[child.type]}
     initdata={child}
