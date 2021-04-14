@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, getContext } from 'svelte';
   import { cleanObject, pipeline } from '../utils.js';
   import InputNumber from '../controls/InputNumber.svelte';
   import InputCheckbox from '../controls/InputCheckbox.svelte';
@@ -14,6 +14,9 @@
 
   export let path
   export let initdata = {}
+
+  let settings
+  getContext('settings').subscribe(data => { settings = data })
 
   let data = {...initdata}
 
@@ -43,6 +46,9 @@
   $: opt = pipeline(
     {
       ...defaults,
+      ...cleanObject({
+        type: settings.porte_type
+      }),
       ...cleanObject(ui)
     },
     opt => ({
@@ -86,10 +92,15 @@
         0,
         opt.epaisseur)
       .ajout_tenons(opt.profondeur_tenons):
+    (opt.type == 'onglet') ? new Piece()
+      .add_name("Traverse")
+      .add_features('traverse')
+      .build(opt.largeur, 0, opt.epaisseur):
     new Piece();
   $: traverse_xpos =
     (opt.type == 'contre-profil')  ? opt.largeur_montants - opt.profondeur_profil:
     (opt.type == 'tenon-mortaise') ? opt.largeur_montants - opt.profondeur_tenons:
+    (opt.type == 'onglet')         ? 0:
     0;
   $: traverse_h = traverse
     .add_name("haut")
@@ -108,6 +119,12 @@
           - 2*jeu_encastrement,
         opt.epaisseur_panneau):
     (opt.type == 'tenon-mortaise') ? new Piece()
+      .build(
+        opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
+        opt.hauteur + 2 * (opt.profondeur_rainure - opt.jeu_rainure)
+          - opt.largeur_traverse_h - opt.largeur_traverse_b,
+        opt.epaisseur_panneau):
+    (opt.type == 'onglet') ? new Piece()
       .build(
         opt.largeur - 2 * (opt.largeur_montants - opt.profondeur_rainure + opt.jeu_rainure),
         opt.hauteur + 2 * (opt.profondeur_rainure - opt.jeu_rainure)
@@ -218,6 +235,7 @@
       <InputSelect def={defaults.type} bind:value={ui.type}>
         <option value="tenon-mortaise">tenon et mortaise</option>
         <option value="contre-profil">contre profil</option>
+        <option value="onglet">coupe d'onglet</option>
       </InputSelect>
     </label>
     <label><span>Largeur   : </span><InputNumber min=0 bind:value={ui.largeur} def={defaults.largeur} force={defaults.force_largeur}/> mm</label>

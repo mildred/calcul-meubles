@@ -5,6 +5,7 @@
   import { cleanObject, reduceToObject } from './utils.js';
   import { routeDeclare } from './route.js';
   import InputNumber from './controls/InputNumber.svelte';
+  import InputSelect from './controls/InputSelect.svelte';
   import InputDurationMin from './controls/InputDurationMin.svelte';
   import InputCheckbox from './controls/InputCheckbox.svelte';
 
@@ -16,6 +17,7 @@
   let def = {
     cubeprice: 1440,
     cubemargin: 135,
+    porte_type: 'contre-profil',
     postes_estimations: [],
   }
 
@@ -100,6 +102,15 @@
 <div class="routable" bind:this={root_element}>
   <button on:click={(e) => window.location.hash = '#/'}>Fermer</button>
   <p><small>(version {version})</small></p>
+  <hr/>
+  <label>
+    <span>Type de porte : </span>
+    <InputSelect def={def.porte_type} bind:value={ui.porte_type}>
+      <option value="tenon-mortaise">tenon et mortaise</option>
+      <option value="contre-profil">contre profil</option>
+      <option value="onglet">coupe d'onglet</option>
+    </InputSelect>
+  </label>
   <hr/>
 
   <label><span>Prix du bois : </span><InputNumber bind:value={ui.cubeprice} def={def.cubeprice} min=0/> €</label>
